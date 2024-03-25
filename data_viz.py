@@ -4,6 +4,10 @@ import matplotlib.pyplot as plt
 import pandas as pd
 import queries
 import duckdb
+import os
+
+# Read the database file path from the environment variable
+#db_path = os.getenv('DB_PATH')
 
 # Specify the file path for the DuckDB database
 db_path = '/Users/MacUser/hedonism-wines_app/database.db'  # Example path, replace with your desired path
@@ -38,8 +42,8 @@ def visualise_discounted_items():
         # Create Altair chart with tooltips
         chart = alt.Chart(df).mark_bar().encode(
             x='title',
-            y='min_price',
-            tooltip=['title', 'min_price']
+            y='current_minimum_price',
+            tooltip=['title', 'current_minimum_price']
         ).interactive()
 
         # Display the chart using Streamlit Vega-Lite

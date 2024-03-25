@@ -1,9 +1,13 @@
 import duckdb
 import pandas as pd
 from datetime import datetime
-
+import os
 
 def process_data(df):
+    
+    # Read the database file path from the environment variable
+    #db_path = os.environ.get('DB_PATH')
+
     # Specify the file path for the DuckDB database
     db_path = '/Users/MacUser/hedonism-wines_app/database.db'  # Example path, replace with your desired path
 

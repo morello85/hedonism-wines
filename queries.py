@@ -10,26 +10,58 @@ db_path = '/Users/MacUser/hedonism-wines_app/database.db'  # Example path, repla
 conn = duckdb.connect(database=db_path, read_only=False)
 
 def query_discounted_items():
+    # Execute SQL queries to create a table only for whisky records
+    results = conn.execute("""
+        WITH current_price AS (
+            SELECT code, price_gbp, import_date, title, url
+            FROM whisky_stocks_table
+            WHERE import_date = CURRENT_DATE()
+        ),
+        minimum_price AS (
+            SELECT code, price_gbp, import_date
+            FROM (
+                SELECT code, 
+                       RANK() OVER (PARTITION BY code ORDER BY price_gbp ASC) rank,
+                       price_gbp,
+                       import_date
+                FROM whisky_stocks_table
+            ) ranked
+            WHERE rank = 1
+        ),
+        previous_price AS (
+            SELECT code, price_gbp, min(import_date) import_date
+            FROM (
+                SELECT code, 
+                       RANK() OVER (PARTITION BY code ORDER BY price_gbp ASC) rank,
+                       price_gbp,
+                       import_date import_date
+                FROM whisky_stocks_table
+            ) ranked
+            WHERE rank = 2
+            GROUP BY code, price_gbp
+        ),
+        output AS (
+            SELECT  c.code, 
+                    c.title,
+                    c.url,
+                    c.price_gbp as current_minimum_price, 
+                    c.import_date as current_date,
+                    p.price_gbp as previous_price,
+                    p.import_date as previous_date,
+                    p.price_gbp - m.price_gbp as price_diff,
+                    ((p.price_gbp - m.price_gbp)/p.price_gbp)*100 AS perc_saving
+            FROM current_price c 
+            JOIN minimum_price m ON c.code = m.code AND c.price_gbp = m.price_gbp
+            JOIN previous_price p ON c.code = p.code
+        )
+        SELECT * FROM output WHERE price_diff > 0
+    """).fetchdf()
 
-	# Execute SQL queries to create a table only for whisky records
-	results = conn.execute("""SELECT 
-	                          code,
-	                          title,
-	                          url,
-	                          max (import_date) todays_date,
-	                          min (price_gbp) min_price,
-	                          max (price_gbp) max_price,
-	                          max (price_gbp) -  min (price_gbp) AS price_diff
-	                          FROM whisky_stocks_table
-	                          GROUP BY code, title, url
-	                          HAVING max (price_gbp) - min (price_gbp) >0
-	                          ORDER BY price_diff
-	                """).fetchdf()
+    # Convert the results to a DataFrame
+    df = pd.DataFrame(results)
+        
+    return df
 
-	# Convert the results to a DataFrame
-	df = pd.DataFrame(results)
-		
-	return df
 
 
 def stocks_and_median_values():
