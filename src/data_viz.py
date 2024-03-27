@@ -2,7 +2,7 @@ import altair as alt
 import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
-import queries
+import .queries
 import duckdb
 import os
 

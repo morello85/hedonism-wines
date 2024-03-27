@@ -1,7 +1,7 @@
 from api import fetch_data_from_api
-from data_processing import process_data
-from data_viz import *
-from s3upload import *
+from .data_processing import process_data
+from .data_viz import *
+from .s3upload import *
 
 
 # Specify data local folder"
