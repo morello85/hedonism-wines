@@ -1,7 +1,7 @@
 from api import fetch_data_from_api
-from .data_processing import process_data
-from .data_viz import *
-from .s3upload import *
+from data_processing import process_data
+import data_viz as dv
+import s3upload as su
 
 
 # Specify data local folder"
@@ -21,15 +21,15 @@ def main():
         print("Data processed successfully.")
 
         # Save data to s3
-        upload_files_to_s3(local_folder, bucket_name)
+        su.upload_files_to_s3(local_folder, bucket_name)
         print ("Data uploaded to s3 successfully")
 
         print(df.head())
     else:
         print("Failed to fetch data from API.")
-    visualise_discounted_items()
-    visualise_stocks_and_median_values()
-    visualise_price_search()
+    dv.visualise_discounted_items()
+    dv.visualise_stocks_and_median_values()
+    dv.visualise_price_search()
     
 if __name__ == "__main__":
     main()
