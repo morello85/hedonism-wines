@@ -9,6 +9,7 @@ import os
 # Read the database file path from the environment variable
 #db_path = os.getenv('DB_PATH')
 
+
 # Specify the file path for the DuckDB database
 db_path = '/Users/MacUser/hedonism-wines_app/database.db'  # Example path, replace with your desired path
 
@@ -26,6 +27,10 @@ def visualise_discounted_items():
         st.write("Sorry, no available discounts today")
 
     else:
+        # Display the DataFrame with clickable titles
+        # for index, row in df.iterrows():
+        #     st.write(f'<a href="{row["url"]}" target="_blank">{row["title"]}</a>')
+        #     st.write(f'Price: {row["current_minimum_price"]}')
         st.data_editor(
             df,
             column_config={
@@ -110,6 +115,20 @@ def visualise_price_search():
 	    (df['price_gbp'] <= price_range[1]) &
 	    (df['title'].str.contains(title_filter, case=False))
 	]
+      
+	st.data_editor(
+        filtered_df,
+        column_config={
+            "url": st.column_config.LinkColumn(
+                "link",
+                help="Click to access the whisky page on hedonism wines",
+                validate="^https://[a-z]+\.streamlit\.app$",
+                max_chars=100,
+                display_text="https://(.*?)\.streamlit\.app"
+            )
+        },
+        hide_index=True,
+        )
 
 	# Create Altair chart with tooltips
 	chart = alt.Chart(filtered_df).mark_bar().encode(
