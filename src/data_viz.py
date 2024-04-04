@@ -107,15 +107,15 @@ def visualise_price_search():
 	# Create a slider for selecting the price range
 	price_range = st.slider('Select price range (GBP)', min_value=0, max_value=700000, value=(left_value, right_value), step=1000)
 
-	# Filter the DataFrame based on the selected price range
-
 	# Filter the DataFrame based on the selected price range and title filter
 	filtered_df = df[
 	    (df['price_gbp'] >= price_range[0]) & 
 	    (df['price_gbp'] <= price_range[1]) &
 	    (df['title'].str.contains(title_filter, case=False))
 	]
-      
+    
+	filtered_df = filtered_df.sort_values(by='price_gbp', ascending=False)
+
 	st.data_editor(
         filtered_df,
         column_config={

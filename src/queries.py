@@ -14,8 +14,7 @@ def query_discounted_items():
     results = conn.execute("""
             WITH current_price AS (
                 SELECT code, price_gbp, import_date, title, url
-                FROM whisky_stocks_table
-                WHERE import_date = CURRENT_DATE()
+                FROM whisky_stocks_table_today
             ),
             historical_max_price AS (
                 SELECT code, MAX(price_gbp) AS max_price
@@ -73,15 +72,12 @@ def price_search ():
 						  title,
 						  price_gbp price_gbp,
 						  url						  
-                          FROM whisky_stocks_table 
-						  WHERE import_date = CURRENT_DATE()
-                          ORDER BY price_gbp DESC
+                          FROM whisky_stocks_table_today 
                 """).fetchdf()
 
 	# Convert the results to a DataFrame
 	df = pd.DataFrame(results)
 
 	return df
-
 
 #conn.close()

@@ -21,12 +21,12 @@ def upload_files_to_s3(local_folder, bucket_name):
             s3.upload_file(local_file_path, bucket_name, s3_object_key)
             print(f"File '{file_name}' uploaded successfully.")
 
-if __name__ == "__main__":
-    # Specify the local folder containing the files
-    local_folder = "/Users/MacUser/hedonism-wines_app/data"
+# if __name__ == "__main__":
+#     # Specify the local folder containing the files
+#     local_folder = "/Users/MacUser/hedonism-wines_app/data"
 
-    # Specify the name of the S3 bucket
-    bucket_name = "hedonism-wines-api-files"
+#     # Specify the name of the S3 bucket
+#     bucket_name = "hedonism-wines-api-files"
 
-    # Call the function to upload files to S3
-    upload_files_to_s3(local_folder, bucket_name)
+#     # Call the function to upload files to S3
+#     upload_files_to_s3(local_folder, bucket_name)

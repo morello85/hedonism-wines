@@ -41,29 +41,7 @@ def fetch_data_from_api(url):
         # Save DataFrame to CSV with the modified filename
         df.to_csv(folder_path + filename, index=False)
         print("File saved successfully.")
-
-        # # Get today's date
-        # today_date = datetime.today().date()
-
-        # # Add today's date to a new column in the DataFrame
-        # df['import_date'] = today_date
-
-        # Rename columns
-        # df.rename(columns={'Code':'code',
-        #                    'Title':'title',
-        #                    'Size':'size',
-        #                    'Style':'style',
-        #                    'Country':'country',
-        #                    'Group':'type',
-        #                    'Available':'availability',
-        #                    'Price (GBP)': 'price_gbp'}, inplace=True)
-
-        # # Trim white space from title column
-        # df['title'] = df['title'].str.strip()
-
-        # # Reconstruct url
-        # df['url'] = 'https://hedonism.co.uk/product/' + df['title'].str.replace(' ', '-').str.lower() + '-whisky'
-
+        
         return df
     else:
         print("Failed to fetch data:", response.status_code)

@@ -1,4 +1,5 @@
 import api
+import url_validation as uv
 import data_processing as dp
 import data_viz as dv
 import s3upload as su
@@ -7,8 +8,7 @@ import queries as q
 import pandas as pd
 from tabulate import tabulate
 import streamlit as st
-
-
+import time
 
 # Specify data local folder"
 local_folder = "/Users/MacUser/hedonism-wines_app/data"
@@ -34,15 +34,17 @@ def main():
     dp.create_or_replace_tables(df)
     print("Data processed successfully.")
 
+    # Example usage:
+    df = q.price_search()
+    urls_to_validate = df['url'].tolist()
+    uv.validate_urls(urls_to_validate)
+    print ("URLs validated.")
+
     dv.visualise_discounted_items()
     dv.visualise_stocks_and_median_values()
     dv.visualise_price_search()
 
-    # # # Rendering for streamlit app
-    # # #st.title("My Streamlit App")
-    # # #st.write("This is a Streamlit app!")
-
-    # # Alerting by email
+    # Alerting by email
     df = q.query_discounted_items()
 
     if ea.is_dataframe_empty(df):
@@ -50,13 +52,10 @@ def main():
         body = "Sorry no discounts today:\n\n" + str(df)
         ea.send_email(subject, body)
     else:
-        plain_text_table = tabulate(df, headers='keys', tablefmt='fancy_grid')
         # Convert DataFrame to HTML table
         html_table = df.to_html(index=False)
         subject = "hedonism wine discounts for you today"
         ea.send_email(subject, html_table)
-        #body = "Check these out:\n\n" + plain_text_table
-        #ea.send_email(subject, body)
     
 if __name__ == "__main__":
     main()

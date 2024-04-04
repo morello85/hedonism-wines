@@ -6,6 +6,8 @@ import os
 import glob
 import logging
 import warnings
+import time
+import streamlit as st
 
 # Suppress all warnings
 warnings.filterwarnings("ignore")
@@ -56,7 +58,9 @@ def read_csv_files_in_folder(folder_path):
 
     return combined_df
 
+@st.cache_data
 def create_or_replace_tables(df):
+    start_time = time.time()
     db_path = '/Users/MacUser/hedonism-wines_app/database.db'
 
     try:
@@ -67,18 +71,34 @@ def create_or_replace_tables(df):
             print ("Tables dropped successfully.")
 
             # Create or replace the stocks_table
-            df.to_sql('stocks_table', con=conn, index=False, if_exists='replace')
+            chunksize = 1000  # Adjust the chunk size as needed
+            df.to_sql('stocks_table', con=conn, index=False, if_exists='replace', chunksize=chunksize)
             print ("Main table recreated")
 
             # Create or replace the whisky_stocks_table view
             conn.execute("""CREATE OR REPLACE VIEW whisky_stocks_table AS 
                             SELECT * FROM stocks_table 
                             WHERE type = 'Whisky'""")
-            print ("Main view recreated")
+            
+            # Create or replace the whisky_stocks_table_today view
+            conn.execute("""CREATE OR REPLACE VIEW whisky_stocks_table_today AS 
+                            SELECT 
+                            import_date, 
+                            code,
+                            title,
+                            price_gbp price_gbp,
+                            url						  
+                            FROM whisky_stocks_table 
+                            WHERE import_date = CURRENT_DATE()
+                            """)
+            print ("Main views recreated")
         
         print("Tables created or replaced successfully.")
     except Exception as e:
         print(f"Error occurred: {e}")
+    end_time = time.time()
+    print(f"This function took {end_time - start_time} seconds to run.")
+
 
 
 # def process_data(df):
@@ -130,26 +150,5 @@ def create_or_replace_tables(df):
 #     # Commit the transaction (optional, depending on your needs)
 #     conn.commit()
 
-#     # results = conn.execute("""SELECT 
-# 		# 				  import_date, 
-# 		# 				  code,
-# 		# 				  title,
-# 		# 				  price_gbp price_gbp,
-# 		# 				  url						  
-#     #                       FROM stocks_table 
-# 		# 				  WHERE import_date = CURRENT_DATE()
-#     #                       AND code = 'HED84172'
-#     #                       ORDER BY price_gbp DESC
-#     #             """).fetchdf()
-
-# 	  # # Convert the results to a DataFrame
-#     # df = pd.DataFrame(results)
-#     # print (df)
-
-#     # Execute SQL queries to create a table only for whisky records
-#     conn.execute("""CREATE OR REPLACE TABLE whisky_stocks_table AS 
-#                     SELECT * FROM stocks_table 
-#                     WHERE type = 'Whisky'""")
-    
 #     # Close the connection
 #     conn.close()
