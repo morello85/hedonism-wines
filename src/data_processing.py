@@ -68,11 +68,13 @@ def create_or_replace_tables(df):
 
             # Create or replace the stocks_table
             df.to_sql('stocks_table', con=conn, index=False, if_exists='replace')
+            print ("Main table recreated")
 
             # Create or replace the whisky_stocks_table view
             conn.execute("""CREATE OR REPLACE VIEW whisky_stocks_table AS 
                             SELECT * FROM stocks_table 
                             WHERE type = 'Whisky'""")
+            print ("Main view recreated")
         
         print("Tables created or replaced successfully.")
     except Exception as e:
