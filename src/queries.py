@@ -51,6 +51,7 @@ def stocks_and_median_values():
 	# Execute SQL queries to create a table only for whisky records
 	results = conn.execute("""SELECT COUNT (*) stock_count,
 	                          MEDIAN (price_gbp) median_price,
+                              SUM (availability) total_availability,
 	                          import_date
 	                          FROM whisky_stocks_table 
 	                          GROUP BY import_date

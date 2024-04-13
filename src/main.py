@@ -11,12 +11,10 @@ from dotenv import load_dotenv
 # # Load environment variables from .env file
 load_dotenv()
 
-# # Specify data local folder"
+# Specify data local folder"
 local_folder = os.getenv('LOCAL_FOLDER')
 
-# #local_folder = "/Users/MacUser/hedonism-wines_app/data"
-
-# # Specify the name of the S3 bucket
+# Specify the name of the S3 bucket
 bucket_name = os.getenv('BUCKET_NAME')
 # #bucket_name = "hedonism-wines-api-files"
 
