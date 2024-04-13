@@ -10,8 +10,8 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Specify the file path for the DuckDB database
-db_path = '/Users/MacUser/hedonism-wines_app/database.db'  # Example path, replace with your desired path
+# Read the database file path from the environment variable
+db_path = os.getenv('DB_PATH')
 
 # Establish a connection to an in-memory DuckDB database
 conn = duckdb.connect(database=db_path, read_only=False)

@@ -1,20 +1,24 @@
 import api
 import url_validation as uv
 import data_processing as dp
-import data_viz as dv
 import s3upload as su
 import email_alerting as ea
 import queries as q
 import pandas as pd
-from tabulate import tabulate
-import streamlit as st
-import time
+import os
+from dotenv import load_dotenv
 
-# Specify data local folder"
-local_folder = "/Users/MacUser/hedonism-wines_app/data"
+# # Load environment variables from .env file
+load_dotenv()
 
-# Specify the name of the S3 bucket
-bucket_name = "hedonism-wines-api-files"
+# # Specify data local folder"
+local_folder = os.getenv('LOCAL_FOLDER')
+
+# #local_folder = "/Users/MacUser/hedonism-wines_app/data"
+
+# # Specify the name of the S3 bucket
+bucket_name = os.getenv('BUCKET_NAME')
+# #bucket_name = "hedonism-wines-api-files"
 
 def main():
     url = 'https://hedonism.co.uk/sites/default/files/full-stock-list.csv'
@@ -34,17 +38,13 @@ def main():
     dp.create_or_replace_tables(df)
     print("Data processed successfully.")
 
-    # Example usage:
+    #Url validation
     df = q.price_search()
     urls_to_validate = df['url'].tolist()
     uv.validate_urls(urls_to_validate)
     print ("URLs validated.")
 
-    dv.visualise_discounted_items()
-    dv.visualise_stocks_and_median_values()
-    dv.visualise_price_search()
-
-    # Alerting by email
+    #Alerting by email
     df = q.query_discounted_items()
 
     if ea.is_dataframe_empty(df):

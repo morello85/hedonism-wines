@@ -5,34 +5,58 @@ import pandas as pd
 import queries
 import duckdb
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Read the database file path from the environment variable
-#db_path = os.getenv('DB_PATH')
-
-
-# Specify the file path for the DuckDB database
-db_path = '/Users/MacUser/hedonism-wines_app/database.db'  # Example path, replace with your desired path
+db_path = os.getenv('DB_PATH')
 
 # Establish a connection to an in-memory DuckDB database
 conn = duckdb.connect(database=db_path, read_only=False)
 
-
 def visualise_discounted_items():
     # Add a title to the Streamlit app
-    st.title('Discounts')
+	df = queries.query_discounted_items()
 
-    df = queries.query_discounted_items()
+	st.title('Discounts')
 
-    if df.empty:
-        st.write("Sorry, no available discounts today")
-
-    else:
+	if df.empty:
+		st.write("Sorry, no available discounts today")
+	
+	else:
         # Display the DataFrame with clickable titles
         # for index, row in df.iterrows():
         #     st.write(f'<a href="{row["url"]}" target="_blank">{row["title"]}</a>')
         #     st.write(f'Price: {row["current_minimum_price"]}')
-        st.data_editor(
-            df,
+
+			# Create text input boxes for the left and right values of the slider
+		left_value = st.text_input('Enter lower discount bound:', value='100')
+		right_value = st.text_input('Enter upper discount bound:', value='5000')
+		discount_perc_value = st.text_input('Enter discount percentage:',value='0.1')
+
+		# Create a text input box for filtering the title
+		title_filter = st.text_input('Enter title:', value='Karuizawa')
+
+		# Convert the input values to integers
+		left_value = int(left_value)
+		right_value = int(right_value)
+
+		# Create a slider for selecting the price range
+		discount_range = st.slider('Select discount range (GBP)', min_value=100, max_value=2000, 
+							value=(left_value, right_value), step=100)
+
+		# Filter the DataFrame based on the selected price range and title filter
+		filtered_df = df[
+			(df['price_diff'] >= discount_range[0]) & 
+			(df['price_diff'] <= discount_range[1]) &
+			(df['title'].str.contains(title_filter, case=False))
+		]
+		
+		filtered_df = filtered_df.sort_values(by='price_diff', ascending=False)
+		st.data_editor(
+            filtered_df,
             column_config={
                 "url": st.column_config.LinkColumn(
                     "link",
@@ -45,14 +69,14 @@ def visualise_discounted_items():
             hide_index=True,
         )
         # Create Altair chart with tooltips
-        chart = alt.Chart(df).mark_bar().encode(
-            x='title',
+		chart = alt.Chart(filtered_df).mark_bar().encode(
+			x=alt.X('title', sort='-y'),
             y='current_minimum_price',
             tooltip=['title', 'current_minimum_price']
         ).interactive()
 
         # Display the chart using Streamlit Vega-Lite
-        st.altair_chart(chart
+		st.altair_chart(chart
                         # , use_container_width=True
                         )
 
@@ -94,18 +118,19 @@ def visualise_price_search():
 	st.title('Price Search')
 
 	# Create text input boxes for the left and right values of the slider
-	left_value = st.text_input('Enter left value:', value='0')
-	right_value = st.text_input('Enter right value:', value='5000')
+	left_value = st.text_input('Enter left value:', value='1000',key=1)
+	right_value = st.text_input('Enter right value:', value='20000', key=2)
 
 	# Create a text input box for filtering the title
-	title_filter = st.text_input('Enter title:', value='Yamazaki')
+	title_filter = st.text_input('Enter title:', value='Karuizawa',key=3)
 
 	# Convert the input values to integers
 	left_value = int(left_value)
 	right_value = int(right_value)
 
 	# Create a slider for selecting the price range
-	price_range = st.slider('Select price range (GBP)', min_value=0, max_value=700000, value=(left_value, right_value), step=1000)
+	price_range = st.slider('Select price range (GBP)', min_value=0, max_value=700000, 
+						 value=(left_value, right_value), step=1000)
 
 	# Filter the DataFrame based on the selected price range and title filter
 	filtered_df = df[
@@ -143,3 +168,8 @@ def visualise_price_search():
 	               )
 
 conn.close()
+
+
+visualise_discounted_items()
+visualise_stocks_and_median_values()
+visualise_price_search()

@@ -7,13 +7,18 @@ import glob
 import logging
 import warnings
 import time
-import streamlit as st
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Suppress all warnings
 warnings.filterwarnings("ignore")
 
-folder_path = '/Users/MacUser/hedonism-wines_app/data'
+# Read the database file path from the environment variable
+folder_path = os.getenv('LOCAL_FOLDER')
 
+#folder_path = '/Users/MacUser/hedonism-wines_app/data'
 
 def read_csv_files_in_folder(folder_path):
     # Initialize an empty list to store DataFrames
@@ -58,10 +63,12 @@ def read_csv_files_in_folder(folder_path):
 
     return combined_df
 
-@st.cache_data
+#@st.cache_data
 def create_or_replace_tables(df):
     start_time = time.time()
-    db_path = '/Users/MacUser/hedonism-wines_app/database.db'
+
+    # Read the database file path from the environment variable
+    db_path = os.getenv('DB_PATH')
 
     try:
         # Establish a connection to the DuckDB database
