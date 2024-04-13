@@ -31,10 +31,10 @@ def visualise_discounted_items():
         #     st.write(f'<a href="{row["url"]}" target="_blank">{row["title"]}</a>')
         #     st.write(f'Price: {row["current_minimum_price"]}')
 
-			# Create text input boxes for the left and right values of the slider
+		# Create text input boxes for the left and right values of the slider
 		left_value = st.text_input('Enter lower discount bound:', value='100')
 		right_value = st.text_input('Enter upper discount bound:', value='5000')
-		discount_perc_value = st.text_input('Enter discount percentage:',value='0.1')
+		discount_perc_value = st.text_input('Enter discount percentage (%):',value='10')
 
 		# Create a text input box for filtering the title
 		title_filter = st.text_input('Enter title:', value='Karuizawa')
@@ -43,18 +43,22 @@ def visualise_discounted_items():
 		left_value = int(left_value)
 		right_value = int(right_value)
 
+		# Convert discount percentage value to float
+		discount_perc_value = float(discount_perc_value)
+		
 		# Create a slider for selecting the price range
 		discount_range = st.slider('Select discount range (GBP)', min_value=100, max_value=2000, 
 							value=(left_value, right_value), step=100)
 
 		# Filter the DataFrame based on the selected price range and title filter
 		filtered_df = df[
-			(df['price_diff'] >= discount_range[0]) & 
-			(df['price_diff'] <= discount_range[1]) &
+			(df['discount'] >= discount_range[0]) & 
+			(df['discount'] <= discount_range[1]) &
+            (df['perc_saving'] > discount_perc_value) &  # Adjusted filter condition
 			(df['title'].str.contains(title_filter, case=False))
 		]
 		
-		filtered_df = filtered_df.sort_values(by='price_diff', ascending=False)
+		filtered_df = filtered_df.sort_values(by='discount', ascending=False)
 		st.data_editor(
             filtered_df,
             column_config={
@@ -71,8 +75,8 @@ def visualise_discounted_items():
         # Create Altair chart with tooltips
 		chart = alt.Chart(filtered_df).mark_bar().encode(
 			x=alt.X('title', sort='-y'),
-            y='current_minimum_price',
-            tooltip=['title', 'current_minimum_price']
+            y='current_price',
+            tooltip=['title', 'current_price']
         ).interactive()
 
         # Display the chart using Streamlit Vega-Lite

@@ -30,14 +30,14 @@ def query_discounted_items():
 						c.code, 
                         c.title,
                         c.url,
-                        c.price_gbp AS current_minimum_price,
-                        m.max_price AS historical_max_price,
-                        m.max_price - c.price_gbp AS price_diff,
-                        ((m.max_price - c.price_gbp) / m.max_price) * 100 AS perc_saving
+                        c.price_gbp AS current_price,
+                        m.max_price AS old_price,
+                        m.max_price - c.price_gbp AS discount,
+                        round(((m.max_price - c.price_gbp) / m.max_price),4) * 100 AS perc_saving
                 FROM current_price c 
                 JOIN historical_max_price m ON c.code = m.code
             )
-            SELECT * FROM output WHERE price_diff > 0
+            SELECT * FROM output WHERE discount > 0
     """).fetchdf()
 
     # Convert the results to a DataFrame
