@@ -38,6 +38,7 @@ def query_discounted_items():
                 JOIN historical_max_price m ON c.code = m.code
             )
             SELECT * FROM output WHERE discount > 0
+			ORDER BY discount DESC
     """).fetchdf()
 
     # Convert the results to a DataFrame

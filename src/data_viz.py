@@ -1,4 +1,4 @@
-import altair as alt
+import altair as alt # type: ignore
 import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -84,72 +84,90 @@ def visualise_discounted_items():
                         # , use_container_width=True
                         )
 
+
 def visualise_stocks_and_median_values():
     df = queries.stocks_and_median_values()
 
     # Add a title to the Streamlit app
     st.title('Stock and Median Price Check')
 
-    # Create Altair chart
-    primary_y_axis = alt.Axis(title='Stock Count / Total Availability', grid=False)
+    primary_axis = alt.Axis(title='Values', grid=False)
+	
+    # Define custom color scale
+    custom_color_scale = alt.Scale(domain=['stock_count', 'median_price'], range=['blue', 'red'])
 
-    # Line chart for stock count
-    line_chart_stock_count = alt.Chart(df).mark_point().encode(
-        x='import_date',
-        y=alt.Y('stock_count:Q', axis=primary_y_axis),
-        color=alt.Color('stock_count:Q', scale=alt.Scale(scheme='darkblue'), legend=alt.Legend(title='Stock Count'))
-    )
+    my_chart = alt.Chart(df).mark_trail().transform_fold(
+    fold=['stock_count', 'median_price'], 
+    as_=['legend', 'value']
+).encode(
+    x='import_date',
+    y=alt.Y('max(value):Q',axis=primary_axis),
+    color=alt.Color('legend:N', scale = custom_color_scale)
+)
+    st.altair_chart(my_chart, use_container_width=True)
 
-    # Line chart for median price 
-    line_chart_median_price = alt.Chart(df).mark_point().encode(
-        x='import_date',
-        y=alt.Y('median_price:Q', axis=alt.Axis(title='Median Price', grid=False, orient='right')),
-        color=alt.Color('median_price:Q', scale=alt.Scale(scheme='goldred'), legend=alt.Legend(title='Median Price'))
-    )
 
-    # Line chart for availability
-    line_chart_availability = alt.Chart(df).mark_point().encode(
-        x='import_date',
-        y=alt.Y('total_availability:Q'),
-        color=alt.Color('total_availability:Q', scale=alt.Scale(scheme='bluegreen'), legend=alt.Legend(title='Total Availability'))
-    )
+    # # Create Altair chart
+    # primary_y_axis = alt.Axis(title='Stock Count', grid=False)
+    # secondary_y_axis = alt.Axis(title='Median Price', grid=False, orient='right')
 
-    combined_chart = (line_chart_stock_count + line_chart_median_price + line_chart_availability)
+    # # Line chart for stock count
+    # line_chart_stock_count = alt.Chart(df).mark_line(color='darkblue').encode(
+    #     x='import_date',
+    #     y=alt.Y('stock_count:Q', axis=primary_y_axis)
+    # )
 
-    # Display the chart using Streamlit Vega-Lite
-    st.altair_chart(combined_chart, use_container_width=True)
+    # # Line chart for median price 
+    # line_chart_median_price = alt.Chart(df).mark_line(color='cyan').encode(
+    #     x='import_date',
+    #     y=alt.Y('median_price:Q', axis=secondary_y_axis)
+	# )
+
+    # # Combine both charts
+    # combined_chart = line_chart_stock_count + line_chart_median_price
+
+    # # Resolve scale for independent y-axes
+    # combined_chart = combined_chart.resolve_scale(
+    #     y='independent'
+    # )
+
+    # # Display the chart using Streamlit Vega-Lite
+    # st.altair_chart(combined_chart, use_container_width=True)
 
 
 # def visualise_stocks_and_median_values():
+#     df = queries.stocks_and_median_values()
 
-# 	df = queries.stocks_and_median_values()
+#     # Add a title to the Streamlit app
+#     st.title('Stock and Median Price Check')
 
-# 	# Add a title to the Streamlit app
-# 	st.title('Stock and Median Price Check')
+#     # Create Altair chart
+#     primary_y_axis = alt.Axis(title='Stock Count', grid=False)
+#     secondary_y_axis = alt.Axis(title='Median Price', grid=False, orient='right')
 
-# 	# Create Altair chart
-# 	primary_y_axis = alt.Axis(title='Stock Count / Total Availability', grid=False)
-# 	#secondary_y_axis = alt.Axis(title='Median Price', grid=False, orient='right')
-
-# 	# Line chart for stock count
-# 	line_chart_stock_count = alt.Chart(df).mark_point(color='blue').encode(
-# 	    x='import_date',
-# 	    y=alt.Y('stock_count:Q', axis=primary_y_axis),
-# 	)
-# 	# Line chart for median price 
-# 	line_chart_median_price = alt.Chart(df).mark_point(color='red').encode(
-#      x='import_date',
-#         y=alt.Y('median_price:Q', axis=alt.Axis(title='Median Price', grid=False, orient='right')),
-#     )
-# 	# Line chart for availability
-# 	line_chart_availability = alt.Chart(df).mark_point(color='green').encode(
+#     # Line chart for stock count
+#     line_chart_stock_count = alt.Chart(df).mark_line(color='darkblue').encode(
 #         x='import_date',
-#         y=alt.Y('total_availability:Q'
-# 				),
+#         y=alt.Y('stock_count:Q', axis=primary_y_axis)
 #     )
-# 	combined_chart = (line_chart_stock_count + line_chart_median_price + line_chart_availability)
-# 	# Display the chart using Streamlit Vega-Lite
-# 	st.altair_chart(combined_chart, use_container_width=True)
+
+#     # Line chart for median price 
+#     line_chart_median_price = alt.Chart(df).mark_line(color='cyan').encode(
+#         x='import_date',
+#         y=alt.Y('median_price:Q', axis=secondary_y_axis)
+# 	)
+
+#     # Combine both charts
+#     combined_chart = line_chart_stock_count + line_chart_median_price
+
+#     # Resolve scale for independent y-axes
+#     combined_chart = combined_chart.resolve_scale(
+#         y='independent'
+#     )
+
+#     # Display the chart using Streamlit Vega-Lite
+#     st.altair_chart(combined_chart, use_container_width=True)
+
 
 def visualise_price_search():
 

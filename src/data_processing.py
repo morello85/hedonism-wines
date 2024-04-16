@@ -1,4 +1,3 @@
-import api
 import duckdb
 import pandas as pd
 from datetime import datetime
@@ -80,7 +79,7 @@ def create_or_replace_tables(df):
             # Create or replace the stocks_table
             chunksize = 1000  # Adjust the chunk size as needed
             df.to_sql('stocks_table', con=conn, index=False, if_exists='replace', chunksize=chunksize)
-            print ("Main table recreated")
+            print ("Main table recreated.")
 
             # Create or replace the whisky_stocks_table view
             conn.execute("""CREATE OR REPLACE VIEW whisky_stocks_table AS 
@@ -98,7 +97,7 @@ def create_or_replace_tables(df):
                             FROM whisky_stocks_table 
                             WHERE import_date = CURRENT_DATE()
                             """)
-            print ("Main views recreated")
+            print ("Main views recreated.")
         
         print("Tables created or replaced successfully.")
     except Exception as e:

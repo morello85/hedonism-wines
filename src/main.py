@@ -3,6 +3,7 @@ import url_validation as uv
 import data_processing as dp
 import s3upload as su
 import email_alerting as ea
+import athena_queries as aq
 import queries as q
 import pandas as pd
 import os
@@ -35,6 +36,9 @@ def main():
 
     dp.create_or_replace_tables(df)
     print("Data processed successfully.")
+
+    # create athena tables
+    aq.athena_tables_creation()
 
     #Url validation
     df = q.price_search()
