@@ -106,33 +106,38 @@ def visualise_stocks_and_median_values():
 )
     st.altair_chart(my_chart, use_container_width=True)
 
+def visualise_units_sold():
+	df = queries.units_sold()
 
-    # # Create Altair chart
-    # primary_y_axis = alt.Axis(title='Stock Count', grid=False)
-    # secondary_y_axis = alt.Axis(title='Median Price', grid=False, orient='right')
+	# Add a title to the Streamlit app
+	st.title('Previous Day Units Sold')
 
-    # # Line chart for stock count
-    # line_chart_stock_count = alt.Chart(df).mark_line(color='darkblue').encode(
-    #     x='import_date',
-    #     y=alt.Y('stock_count:Q', axis=primary_y_axis)
-    # )
+	#df
+	
+	st.data_editor(
+            df,
+            column_config={
+                "url": st.column_config.LinkColumn(
+                    "link",
+                    help="Click to access the whisky page on hedonism wines",
+                    validate="^https://[a-z]+\.streamlit\.app$",
+                    max_chars=100,
+                    display_text="https://(.*?)\.streamlit\.app"
+                )
+            },
+            hide_index=True,
+	)
+	# Create Altair chart with tooltips
+	chart = alt.Chart(df).mark_bar().encode(
+	    x=alt.X('title', sort='-y'),
+	    y='price_gbp',
+	    tooltip=['title', 'price_gbp']
+	).interactive()
 
-    # # Line chart for median price 
-    # line_chart_median_price = alt.Chart(df).mark_line(color='cyan').encode(
-    #     x='import_date',
-    #     y=alt.Y('median_price:Q', axis=secondary_y_axis)
-	# )
-
-    # # Combine both charts
-    # combined_chart = line_chart_stock_count + line_chart_median_price
-
-    # # Resolve scale for independent y-axes
-    # combined_chart = combined_chart.resolve_scale(
-    #     y='independent'
-    # )
-
-    # # Display the chart using Streamlit Vega-Lite
-    # st.altair_chart(combined_chart, use_container_width=True)
+	# Display the chart using Streamlit Vega-Lite
+	st.altair_chart(chart
+	                #, use_container_width=True
+	               )
 
 
 # def visualise_stocks_and_median_values():
@@ -231,4 +236,5 @@ conn.close()
 
 visualise_discounted_items()
 visualise_stocks_and_median_values()
+visualise_units_sold()
 visualise_price_search()
