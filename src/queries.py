@@ -1,6 +1,7 @@
 import pandas as pd
 from sqlalchemy import create_engine
 import duckdb
+from datetime import datetime
 import os
 from dotenv import load_dotenv
 
@@ -109,6 +110,18 @@ def units_sold():
 
 	# Convert the results to a DataFrame
 	df = pd.DataFrame(results)
+	
+    # Get today's date
+	today_date_file_name = datetime.now().strftime("_%Y_%m_%d")
+
+    # Define filename with today's date appended
+	filename = f"sales{today_date_file_name}.csv"  # Change "data" to your desired filename prefix
+        
+    # Define the path where you want to save the file
+	folder_path = "/Users/MacUser/hedonism-wines_app/sales_data/"  # Change this to your desired folder path
+	
+    # Export dataframe
+	df.to_csv(folder_path + filename, index=False)
 
 	# Convert import_date to datetime
 	df['import_date'] = pd.to_datetime(df['import_date'])

@@ -6,6 +6,8 @@ import glob
 import logging
 import warnings
 import time
+import nltk
+from nltk.corpus import stopwords
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -57,6 +59,25 @@ def read_csv_files_in_folder(folder_path):
 
     # Trim white space from title column
     combined_df['title'] = combined_df['title'].apply(str.strip)
+
+    # Download NLTK stop words if not already downloaded
+    nltk.download('stopwords')
+
+    # Get English stop words
+    stop_words = set(stopwords.words('english'))
+
+    # Function to remove stop words from a string
+    def remove_stop_words(text):
+        # Tokenize the text into words
+        words = text.split()
+        # Filter out stop words
+        filtered_words = [word for word in words if word.lower() not in stop_words]
+        # Join the filtered words back into a string
+        return ' '.join(filtered_words)
+
+    # Apply the remove_stop_words function to the title column
+    combined_df['title'] = combined_df['title'].apply(remove_stop_words)
+    
     # Reconstruct url
     combined_df['url'] = 'https://hedonism.co.uk/product/' + combined_df['title'].str.replace(' ', '-').str.lower() + '-whisky'
 
@@ -106,55 +127,41 @@ def create_or_replace_tables(df):
     print(f"This function took {end_time - start_time} seconds to run.")
 
 
-
-# def process_data(df):
+def insert_data(df):
     
-#     # Read the database file path from the environment variable
-#     #db_path = os.environ.get('DB_PATH')
+    # Read the database file path from the environment variable
+    db_path = os.environ.get('DB_PATH')
 
-#     # Specify the file path for the DuckDB database
-#     db_path = '/Users/MacUser/hedonism-wines_app/database.db'  # Example path, replace with your desired path
+    # Establish a connection to an in-memory DuckDB database
+    conn = duckdb.connect(database=db_path, read_only=False)
 
-#     # Establish a connection to an in-memory DuckDB database
-#     conn = duckdb.connect(database=db_path, read_only=False)
+    today_date = datetime.now().strftime('%Y-%m-%d')  
 
-#     today_date = datetime.now().strftime('%Y-%m-%d')  
+    conn = duckdb.connect(database=db_path, read_only=False)
 
-#     # Execute DELETE queries and commit the changes
-#     delete_query_1 = f"DELETE FROM stocks_table WHERE import_date = '{today_date}'"
-#     conn.execute(delete_query_1)
+    # Get the column names from the DataFrame
+    columns = list(df.columns)
 
-#     delete_query_2 = f"DELETE FROM whisky_stocks_table"
-#     conn.execute(delete_query_2)
+    # Generate the list of column names for the INSERT INTO statement
+    column_names = ", ".join(columns)
 
-#     # Close connection
-#     #conn.close()
+    # Generate the list of parameter placeholders (?, ?, ?) for the VALUES clause
+    parameter_placeholders = ", ".join(["?" for _ in range(len(columns))])
 
-#     #conn = duckdb.connect(database=db_path, read_only=False)
+    # Convert the DataFrame to records list
+    records = df.values.tolist()
 
-#     # Get the column names from the DataFrame
-#     columns = list(df.columns)
+    # Define the name of your existing table
+    table_name = 'stocks_table'
 
-#     # Generate the list of column names for the INSERT INTO statement
-#     column_names = ", ".join(columns)
+    # Construct the SQL INSERT INTO statement dynamically
+    sql_insert = f"INSERT INTO {table_name} ({column_names}) VALUES ({parameter_placeholders})"
 
-#     # Generate the list of parameter placeholders (?, ?, ?) for the VALUES clause
-#     parameter_placeholders = ", ".join(["?" for _ in range(len(columns))])
+    # Execute the INSERT statement
+    conn.executemany(sql_insert, records)
 
-#     # Convert the DataFrame to records list
-#     records = df.values.tolist()
+    # Commit the transaction (optional, depending on your needs)
+    conn.commit()
 
-#     # Define the name of your existing table
-#     table_name = 'stocks_table'
-
-#     # Construct the SQL INSERT INTO statement dynamically
-#     sql_insert = f"INSERT INTO {table_name} ({column_names}) VALUES ({parameter_placeholders})"
-
-#     # Execute the INSERT statement
-#     conn.executemany(sql_insert, records)
-
-#     # Commit the transaction (optional, depending on your needs)
-#     conn.commit()
-
-#     # Close the connection
-#     conn.close()
+    # Close the connection
+    conn.close()

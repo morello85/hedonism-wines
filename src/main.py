@@ -37,6 +37,10 @@ def main():
     dp.create_or_replace_tables(df)
     print("Data processed successfully.")
 
+    # export sales data
+    q.units_sold()
+    print ("Sales data loaded successfully.")
+
     # create athena tables
     aq.athena_tables_creation()
 
