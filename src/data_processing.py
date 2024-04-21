@@ -17,7 +17,7 @@ load_dotenv()
 warnings.filterwarnings("ignore")
 
 # Read the database file path from the environment variable
-folder_path = os.getenv('LOCAL_FOLDER')
+#folder_path = os.getenv('LOCAL_FOLDER')
 
 #folder_path = '/Users/MacUser/hedonism-wines_app/data'
 
@@ -99,7 +99,9 @@ def create_or_replace_tables(df):
 
             # Create or replace the stocks_table
             chunksize = 1000  # Adjust the chunk size as needed
-            df.to_sql('stocks_table', con=conn, index=False, if_exists='replace', chunksize=chunksize)
+            df.to_sql('stocks_table', con=conn, index=False, if_exists='append', chunksize=chunksize,method='multi')
+
+            #df.to_sql('stocks_table', con=conn, index=False, if_exists='replace', chunksize=chunksize)
             print ("Main table recreated.")
 
             # Create or replace the whisky_stocks_table view

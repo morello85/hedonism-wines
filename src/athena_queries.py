@@ -10,7 +10,7 @@ load_dotenv()
 local_folder = os.getenv('LOCAL_FOLDER')
 
 # Specify the name of the S3 bucket
-bucket_name = os.getenv('BUCKET_NAME')
+#api_files_bucket_name = os.getenv('API_FILES_BUCKET_NAME')
 
 # Create an Athena client
 athena_client = boto3.client('athena', region_name='eu-west-1')

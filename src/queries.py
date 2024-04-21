@@ -105,6 +105,7 @@ def units_sold():
                        ON y.code = t.code
                        ) a
                        WHERE a.today_code_availability <> yesterday_code_availability
+					   AND a.yesterday_availability - a.today_availability > 0
                        ORDER BY price_gbp DESC
                 """).fetchdf()
 
