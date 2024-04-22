@@ -1,0 +1,62 @@
+import_date,code,title,url,price_gbp,availability,units_sold
+2024-04-19,HED65821,Bowmore 34 Year Old 1971,https://hedonism.co.uk/product/bowmore-34-year-old-1971-whisky,7500.0,1.0,1.0
+2024-04-19,HED46807,Macallan 30 Year Old Sherry Oak (2023 Release),https://hedonism.co.uk/product/macallan-30-year-old-sherry-oak-(2023-release)-whisky,5250.0,31.0,-12.0
+2024-04-19,HED7001,Balvenie 30 Year Old,https://hedonism.co.uk/product/balvenie-30-year-old-whisky,3395.0,5.0,1.0
+2024-04-19,HED00089,Springbank 24 Year Old Single Cask UK Customers 1994,https://hedonism.co.uk/product/springbank-24-year-old-single-cask-uk-customers-1994-whisky,2895.0,1.0,1.0
+2024-04-19,HED95912,Glendronach 31 Year Old Grandeur Batch 3,https://hedonism.co.uk/product/glendronach-31-year-old-grandeur-batch-3-whisky,2795.0,1.0,1.0
+2024-04-19,HED46816,Macallan 25 Year Old Sherry Oak (2023 Release),https://hedonism.co.uk/product/macallan-25-year-old-sherry-oak-(2023-release)-whisky,2295.0,98.0,-18.0
+2024-04-19,HED21701,Glendronach 30 Year Old PX Single Cask 1993,https://hedonism.co.uk/product/glendronach-30-year-old-px-single-cask-1993-whisky,1085.0,24.0,-12.0
+2024-04-19,HED79802,Dalmore 25 Year Old,https://hedonism.co.uk/product/dalmore-25-year-old-whisky,1070.0,11.0,24.0
+2024-04-19,HED7047,Hibiki 21 Year Old,https://hedonism.co.uk/product/hibiki-21-year-old-whisky,950.0,33.0,-6.0
+2024-04-19,HED46916,Glendronach 29 Year Old Grandeur Batch 12,https://hedonism.co.uk/product/glendronach-29-year-old-grandeur-batch-12-whisky,865.0,6.0,-4.0
+2024-04-19,HED21825,Bowmore 27 Year Old Kinship Hunter Laing,https://hedonism.co.uk/product/bowmore-27-year-old-kinship-hunter-laing-whisky,775.0,5.0,1.0
+2024-04-19,HED45927,Talisker 25 Year Old,https://hedonism.co.uk/product/talisker-25-year-old-whisky,460.0,13.0,1.0
+2024-04-19,HED93971,Macallan 18 Year Old Sherry Oak (2023 Release),https://hedonism.co.uk/product/macallan-18-year-old-sherry-oak-(2023-release)-whisky,395.0,149.0,-120.0
+2024-04-19,HED46932,Highland Park 18 Year Old Single Cask London Edition,https://hedonism.co.uk/product/highland-park-18-year-old-single-cask-london-edition-whisky,390.0,5.0,1.0
+2024-04-19,HED40141,Macallan 18 Year Old Double Cask,https://hedonism.co.uk/product/macallan-18-year-old-double-cask-whisky,310.0,22.0,-6.0
+2024-04-19,HED51228,Mortlach 20 Year Old,https://hedonism.co.uk/product/mortlach-20-year-old-whisky,285.0,4.0,2.0
+2024-04-19,HED3175,Dalmore 18 Year Old,https://hedonism.co.uk/product/dalmore-18-year-old-whisky,275.0,17.0,-2.0
+2024-04-19,HED14607,Glenfarclas 25 Year Old,https://hedonism.co.uk/product/glenfarclas-25-year-old-whisky,225.0,16.0,1.0
+2024-04-19,HED3176,Dalmore King Alexander III,https://hedonism.co.uk/product/dalmore-king-alexander-iii-whisky,195.0,41.0,1.0
+2024-04-19,HED7701,Glendronach 18 Year Old Allardice,https://hedonism.co.uk/product/glendronach-18-year-old-allardice-whisky,178.0,60.0,2.0
+2024-04-19,HED45868,Tamdhu 18 Year Old,https://hedonism.co.uk/product/tamdhu-18-year-old-whisky,169.0,8.0,-6.0
+2024-04-19,HED46841,Macallan Harmony Collection Amber Meadow,https://hedonism.co.uk/product/macallan-harmony-collection-amber-meadow-whisky,165.0,40.0,-3.0
+2024-04-19,HED45988,Glenrothes 18 Year Old,https://hedonism.co.uk/product/glenrothes-18-year-old-whisky,159.0,7.0,-3.0
+2024-04-19,HED40140,Macallan 15 Year Old Double Cask,https://hedonism.co.uk/product/macallan-15-year-old-double-cask-whisky,145.0,31.0,-6.0
+2024-04-19,HED53072,Balblair 18 Year Old,https://hedonism.co.uk/product/balblair-18-year-old-whisky,140.0,5.0,3.0
+2024-04-19,HED46596,Compass Box Hedonism² (Exclusive Hedonism Wines),https://hedonism.co.uk/product/compass-box-hedonism²-(exclusive-hedonism-wines)-whisky,140.0,303.0,1.0
+2024-04-19,HED08636,Tomatin 18 Year Old,https://hedonism.co.uk/product/tomatin-18-year-old-whisky,119.0,19.0,2.0
+2024-04-19,HED51227,Mortlach 16 Year Old,https://hedonism.co.uk/product/mortlach-16-year-old-whisky,105.0,16.0,4.0
+2024-04-19,HED6068,Glenlivet 18 Year Old,https://hedonism.co.uk/product/glenlivet-18-year-old-whisky,105.0,6.0,-2.0
+2024-04-19,HED46991,Macallan Night Earth Journey,https://hedonism.co.uk/product/macallan-night-earth-journey-whisky,105.0,82.0,3.0
+2024-04-19,HED3173,Dalmore 15 Year Old,https://hedonism.co.uk/product/dalmore-15-year-old-whisky,103.0,10.0,30.0
+2024-04-19,HED69073,Deanston 18 Year Old,https://hedonism.co.uk/product/deanston-18-year-old-whisky,91.7,3.0,1.0
+2024-04-19,HED54764,Tamdhu 15 Year Old,https://hedonism.co.uk/product/tamdhu-15-year-old-whisky,86.7,4.0,2.0
+2024-04-19,HED2976,Macallan 12 Year Old Sherry Oak,https://hedonism.co.uk/product/macallan-12-year-old-sherry-oak-whisky,86.0,73.0,-59.0
+2024-04-19,HED21425,Lagavulin Distiller`s Edition (2022 Release),https://hedonism.co.uk/product/lagavulin-distiller`s-edition-(2022-release)-whisky,85.0,3.0,5.0
+2024-04-19,HED81882,Glengoyne 15 Year Old,https://hedonism.co.uk/product/glengoyne-15-year-old-whisky,83.9,10.0,1.0
+2024-04-19,HED86657,Yamazaki Distillers Reserve,https://hedonism.co.uk/product/yamazaki-distillers-reserve-whisky,79.0,40.0,-24.0
+2024-04-19,HED51274,Glendronach 15 Year Old Revival,https://hedonism.co.uk/product/glendronach-15-year-old-revival-whisky,78.5,42.0,-1.0
+2024-04-19,HED61388,Macallan 12 Year Old Double Cask,https://hedonism.co.uk/product/macallan-12-year-old-double-cask-whisky,77.0,42.0,-24.0
+2024-04-19,HED6052,Lagavulin 16 Year Old,https://hedonism.co.uk/product/lagavulin-16-year-old-whisky,74.8,43.0,1.0
+2024-04-19,HED4706,Glenfarclas 15 Year Old,https://hedonism.co.uk/product/glenfarclas-15-year-old-whisky,73.0,32.0,1.0
+2024-04-19,HED46670,Benrinnes 11 Year Old Adelphi (Exclusive Hedonism Wines) 2011,https://hedonism.co.uk/product/benrinnes-11-year-old-adelphi-(exclusive-hedonism-wines)-2011-whisky,69.9,12.0,-2.0
+2024-04-19,HED40295,GlenAllachie 15 Year Old,https://hedonism.co.uk/product/glenallachie-15-year-old-whisky,69.0,2.0,1.0
+2024-04-19,HED3087,Ardbeg Uigeadail,https://hedonism.co.uk/product/ardbeg-uigeadail-whisky,68.0,13.0,1.0
+2024-04-19,HED8024,Balvenie 14 Year Old Caribbean Cask,https://hedonism.co.uk/product/balvenie-14-year-old-caribbean-cask-whisky,65.9,9.0,5.0
+2024-04-19,HED8043,Johnnie Walker Blue Label 20cl,https://hedonism.co.uk/product/johnnie-walker-blue-label-20cl-whisky,65.0,16.0,1.0
+2024-04-19,HED47070,Lagg Corriecravie Sherry Finish,https://hedonism.co.uk/product/lagg-corriecravie-sherry-finish-whisky,64.0,7.0,-4.0
+2024-04-19,HED79376,Arran Bodega Sherry Cask,https://hedonism.co.uk/product/arran-bodega-sherry-cask-whisky,61.0,6.0,1.0
+2024-04-19,HED86379,Nikka Taketsuru Pure Malt,https://hedonism.co.uk/product/nikka-taketsuru-pure-malt-whisky,59.0,6.0,-2.0
+2024-04-19,HED6055,Dalwhinnie 15 Year Old,https://hedonism.co.uk/product/dalwhinnie-15-year-old-whisky,49.5,10.0,1.0
+2024-04-19,HED6361,Johnnie Walker Gold Reserve,https://hedonism.co.uk/product/johnnie-walker-gold-reserve-whisky,45.9,9.0,1.0
+2024-04-19,HED8515,Bunnahabhain 12 Year Old,https://hedonism.co.uk/product/bunnahabhain-12-year-old-whisky,44.0,16.0,1.0
+2024-04-19,HED46225,Singleton Dufftown Sunray,https://hedonism.co.uk/product/singleton-dufftown-sunray-whisky,43.9,2.0,-1.0
+2024-04-19,HED40544,Glencadam Reserve Andalucía,https://hedonism.co.uk/product/glencadam-reserve-andalucía-whisky,41.2,1.0,1.0
+2024-04-19,HED68189,Highland Park 12 Year Old,https://hedonism.co.uk/product/highland-park-12-year-old-whisky,41.0,23.0,-12.0
+2024-04-19,HED69585,Glen Elgin 12 Year Old,https://hedonism.co.uk/product/glen-elgin-12-year-old-whisky,41.0,8.0,2.0
+2024-04-19,HED74608,Arran 10 Year Old,https://hedonism.co.uk/product/arran-10-year-old-whisky,39.9,8.0,1.0
+2024-04-19,HED0133,Laphroaig 10 Year Old,https://hedonism.co.uk/product/laphroaig-10-year-old-whisky,39.9,13.0,5.0
+2024-04-19,HED6042,Johnnie Walker Black Label 12 Year Old,https://hedonism.co.uk/product/johnnie-walker-black-label-12-year-old-whisky,28.9,36.0,4.0
+2024-04-19,HED79404,Talisker 10 Year Old 20cl,https://hedonism.co.uk/product/talisker-10-year-old-20cl-whisky,17.7,1.0,1.0
+2024-04-19,HED52182,Rock Oyster 3cl,https://hedonism.co.uk/product/rock-oyster-3cl-whisky,4.9,1.0,1.0

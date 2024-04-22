@@ -8,6 +8,7 @@ import warnings
 import time
 import nltk
 from nltk.corpus import stopwords
+import re
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
@@ -77,6 +78,18 @@ def read_csv_files_in_folder(folder_path):
 
     # Apply the remove_stop_words function to the title column
     combined_df['title'] = combined_df['title'].apply(remove_stop_words)
+
+
+    def remove_punctuation(text):
+    # Define a regular expression pattern to match punctuation characters
+        punctuation_pattern = r'[^\w\s]'
+        
+        # Use re.sub() to replace all punctuation characters with an empty string
+        clean_text = re.sub(punctuation_pattern, '', text)
+        
+        return clean_text
+    
+    combined_df['title'] = combined_df['title'].apply(remove_punctuation)
     
     # Reconstruct url
     combined_df['url'] = 'https://hedonism.co.uk/product/' + combined_df['title'].str.replace(' ', '-').str.lower() + '-whisky'

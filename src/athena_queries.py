@@ -1,13 +1,13 @@
 import os
 import boto3
 import time
-from dotenv import load_dotenv
+#from dotenv import load_dotenv
 
 # Load environment variables from .env file
-load_dotenv()
+#load_dotenv()
 
 # Specify data local folder"
-local_folder = os.getenv('LOCAL_FOLDER')
+#local_folder = os.getenv('LOCAL_FOLDER')
 
 # Specify the name of the S3 bucket
 #api_files_bucket_name = os.getenv('API_FILES_BUCKET_NAME')

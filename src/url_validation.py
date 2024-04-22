@@ -19,7 +19,6 @@ def validate_urls(urls):
     invalid_urls_df = pd.DataFrame({'URL': invalid_urls})
 
     # Export DataFrame to CSV
-    invalid_urls_df.to_csv('/Users/MacUser/hedonism-wines_app/invalid_urls.csv', 
-                           index=False)
+    invalid_urls_df.to_csv('/Users/MacUser/hedonism-wines_app/invalid_urls.csv', index=False)
 
     return
