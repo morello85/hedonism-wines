@@ -29,7 +29,14 @@ def read_csv_files_in_folder(folder_path):
     csv_files = glob.glob(os.path.join(folder_path, '*.csv'))
 
     for file in csv_files:
-        df = pd.read_csv(file)
+    # Read the header of the CSV file to get the column names
+        with open(file, 'r') as f:
+            first_line = f.readline()
+            column_names = first_line.strip().split(',')
+    # Deal with the schema change on 30th May 2024
+        df = pd.read_csv(file,usecols=range(8))
+        if column_names[7] == 'Price (inc VAT)':
+            df.rename(columns={'Price (inc VAT)': 'Price (GBP)'}, inplace=True)
     # Extract the date from the file name
         file_name = os.path.basename(file)
         date_str = '_'.join(file_name.split('_')[-3:])  # Extract the date part of the file name
