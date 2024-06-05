@@ -47,10 +47,10 @@ def main():
     aq.athena_tables_creation()
 
     # Url validation
-    df = q.price_search()
-    urls_to_validate = df['url'].tolist()
-    uv.validate_urls(urls_to_validate)
-    print ("URLs validated.")
+    # df = q.price_search()
+    # urls_to_validate = df['url'].tolist()
+    # uv.validate_urls(urls_to_validate)
+    # print ("URLs validated.")
 
     # Alerting by email
     df = q.query_discounted_items()
