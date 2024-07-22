@@ -23,39 +23,38 @@ warnings.filterwarnings("ignore")
 #folder_path = '/Users/MacUser/hedonism-wines_app/data'
 
 def read_csv_files_in_folder(folder_path):
-    # Initialize an empty list to store DataFrames
-    dfs = []
-    # Use glob to get a list of all CSV files in the folder
-    csv_files = glob.glob(os.path.join(folder_path, '*.csv'))
+    # Step 1: Read all files into dataframes
+    csv_files = glob.glob(f"{folder_path}/*.csv")
+    dataframes = []
 
     for file in csv_files:
-    # Read the header of the CSV file to get the column names
-        with open(file, 'r') as f:
-            first_line = f.readline()
-            column_names = first_line.strip().split(',')
-    # Deal with the schema change on 30th May 2024
-        df = pd.read_csv(file,usecols=range(8))
-        if column_names[7] == 'Price (inc VAT)':
-            df.rename(columns={'Price (inc VAT)': 'Price (GBP)'}, inplace=True)
-    # Extract the date from the file name
+        df = pd.read_csv(file)
+
+        # Extract the date part of the file name
         file_name = os.path.basename(file)
-        date_str = '_'.join(file_name.split('_')[-3:])  # Extract the date part of the file name
-        date_str = date_str.split('.')[0]  # Remove the .csv extension
-        date = pd.to_datetime(date_str, format='%Y_%m_%d')  # Convert the date string to a datetime object
+        date_str = '_'.join(file_name.split('_')[-3:]).split('.')[0]
+        date = pd.to_datetime(date_str, format='%Y_%m_%d')
 
         # Add a new column 'import_date' with the extracted date
-        df['import_date'] = date
+        df['import_date'] = date.strftime('%Y-%m-%d')
 
-        # Format the date in the DataFrame to display as 'YYYY-MM-DD'
-        df['import_date'] = df['import_date'].dt.strftime('%Y-%m-%d')
+        dataframes.append(df)
 
-        #print (file,df.columns)
-        # Append the DataFrame to the list
-        dfs.append(df)
+    # Step 2: Identify all unique columns across all dataframes
+    all_columns = set()
+    for df in dataframes:
+        all_columns.update(df.columns)
 
-    # Read each CSV file into a DataFrame and concatenate them
-    combined_df = pd.concat(dfs, ignore_index=False)
-    #print (combined_df.info())
+    # Step 3: Standardize each dataframe to have all columns
+    standardized_dataframes = []
+    for df in dataframes:
+        for column in all_columns:
+            if column not in df.columns:
+                df[column] = pd.NA
+        standardized_dataframes.append(df[sorted(all_columns)])
+
+    # Step 4: Concatenate all dataframes
+    combined_df = pd.concat(standardized_dataframes, ignore_index=True)
     combined_df.rename(columns={'Code':'code',
                            'Title':'title',
                            'Size':'size',
@@ -63,44 +62,15 @@ def read_csv_files_in_folder(folder_path):
                            'Country':'country',
                            'Group':'type',
                            'Available':'availability',
-                           'Price (GBP)': 'price_gbp'}, inplace=True)
-
-    # Trim white space from title column
-    combined_df['title'] = combined_df['title'].apply(str.strip)
-
-    # Download NLTK stop words if not already downloaded
-    nltk.download('stopwords')
-
-    # Get English stop words
-    stop_words = set(stopwords.words('english'))
-
-    # Function to remove stop words from a string
-    def remove_stop_words(text):
-        # Tokenize the text into words
-        words = text.split()
-        # Filter out stop words
-        filtered_words = [word for word in words if word.lower() not in stop_words]
-        # Join the filtered words back into a string
-        return ' '.join(filtered_words)
-
-    # Apply the remove_stop_words function to the title column
-    combined_df['title'] = combined_df['title'].apply(remove_stop_words)
-
-
-    def remove_punctuation(text):
-    # Define a regular expression pattern to match punctuation characters
-        punctuation_pattern = r'[^\w\s]'
-        
-        # Use re.sub() to replace all punctuation characters with an empty string
-        clean_text = re.sub(punctuation_pattern, '', text)
-        
-        return clean_text
+                           'Price (GBP)': 'price_gbp',
+                           'ABV': 'abv',
+                           'Link':'url',
+                           'Price (ex-VAT)':'price_ex_vat',
+                           'Price (inc VAT)': 'price_incl_vat',
+                           'Vintage':'vintage'
+                           }, inplace=True)
     
-    combined_df['title'] = combined_df['title'].apply(remove_punctuation)
-    
-    # Reconstruct url
-    combined_df['url'] = 'https://hedonism.co.uk/product/' + combined_df['title'].str.replace(' ', '-').str.lower() + '-whisky'
-
+    print ('Dataframes combined successfully.')
     return combined_df
 
 #@st.cache_data
@@ -119,23 +89,58 @@ def create_or_replace_tables(df):
 
             # Create or replace the stocks_table
             chunksize = 1000  # Adjust the chunk size as needed
-            df.to_sql('stocks_table', con=conn, index=False, if_exists='append', chunksize=chunksize,method='multi')
 
-            #df.to_sql('stocks_table', con=conn, index=False, if_exists='replace', chunksize=chunksize)
+            dtype = {
+            'abv': 'DOUBLE',
+            'availability': 'VARCHAR',
+            'code': 'VARCHAR',
+            'country': 'VARCHAR',
+            'type': 'VARCHAR',
+            'url': 'VARCHAR',
+            'price_gbp': 'DOUBLE',
+            'price_ex_vat': 'DOUBLE',
+            'price_incl_vat': 'DOUBLE',
+            'size': 'VARCHAR',
+            'style': 'VARCHAR',
+            'title': 'VARCHAR',
+            'vintage': 'VARCHAR',
+            'import_date': 'DATE'}
+
+            df.to_sql('stocks_table', con=conn, index=False, if_exists='append', chunksize=chunksize,method='multi', dtype=dtype)
+
             print ("Main table recreated.")
 
+            conn.execute("DROP VIEW IF EXISTS whisky_stocks_table")
+            print ("whisky_stocks_table view dropped successfully.")
             # Create or replace the whisky_stocks_table view
             conn.execute("""CREATE OR REPLACE VIEW whisky_stocks_table AS 
-                            SELECT * FROM stocks_table 
+                            SELECT 
+                            abv,
+                            availability,
+                            code,
+                            country,
+                            type,
+                            url,
+                            COALESCE(price_gbp, price_incl_vat) AS price_gbp,
+                            COALESCE(price_ex_vat,0) price_ex_vat,
+                            COALESCE(price_incl_vat,0) price_incl_vat,
+                            size,
+                            style,
+                            title,
+                            vintage,
+                            import_date
+                            FROM stocks_table 
                             WHERE type = 'Whisky'""")
             
+            conn.execute("DROP VIEW IF EXISTS whisky_stocks_table_today")
+            print ("whisky_stocks_table_today view dropped successfully.")
             # Create or replace the whisky_stocks_table_today view
             conn.execute("""CREATE OR REPLACE VIEW whisky_stocks_table_today AS 
                             SELECT 
                             import_date, 
                             code,
                             title,
-                            price_gbp price_gbp,
+                            price_gbp,
                             url						  
                             FROM whisky_stocks_table 
                             WHERE import_date = CURRENT_DATE()

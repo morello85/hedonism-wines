@@ -52,8 +52,8 @@ def stocks_and_median_values():
 
 	# Execute SQL queries to create a table only for whisky records
 	results = conn.execute("""SELECT COUNT (*) stock_count,
-	                          MEDIAN (price_gbp) median_price,
-                              SUM (availability) total_availability,
+	                          MEDIAN (CAST(price_gbp AS FLOAT)) median_price,
+                              SUM (CAST(availability AS FLOAT)) total_availability,
 	                          import_date
 	                          FROM whisky_stocks_table 
 	                          GROUP BY import_date
@@ -89,7 +89,7 @@ def units_sold():
 						a.url, 
 						a.price_gbp,
 						a.today_availability availability,
-                        a.yesterday_availability - a.today_availability units_sold
+                        CAST(a.yesterday_availability AS FLOAT) - CAST(a.today_availability AS FLOAT) units_sold
                        FROM 
                        (
                        SELECT 
@@ -105,7 +105,7 @@ def units_sold():
                        ON y.code = t.code
                        ) a
                        WHERE a.today_code_availability <> yesterday_code_availability
-					   AND a.yesterday_availability - a.today_availability > 0
+					   AND CAST(a.yesterday_availability AS FLOAT) - CAST(a.today_availability AS FLOAT) > 0
                        ORDER BY price_gbp DESC
                 """).fetchdf()
 
