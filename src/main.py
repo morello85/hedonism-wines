@@ -1,5 +1,4 @@
 import api
-import url_validation as uv
 import data_processing as dp
 import s3upload as su
 import email_alerting as ea
@@ -46,14 +45,9 @@ def main():
     # Create athena tables
     aq.athena_tables_creation()
 
-    # Url validation
-    # df = q.price_search()
-    # urls_to_validate = df['url'].tolist()
-    # uv.validate_urls(urls_to_validate)
-    # print ("URLs validated.")
-
     # Alerting by email
     df = q.query_discounted_items()
+    df = df[df['current_price']<=500].sort_values(by='current_price',ascending=False)
 
     if ea.is_dataframe_empty(df):
         subject = "No hedonism wine discounts today"

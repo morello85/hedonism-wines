@@ -6,9 +6,6 @@ import glob
 import logging
 import warnings
 import time
-import nltk
-from nltk.corpus import stopwords
-import re
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
