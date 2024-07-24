@@ -47,7 +47,7 @@ def main():
 
     # Alerting by email
     df = q.query_discounted_items()
-    df = df[df['current_price']<=500].sort_values(by='current_price',ascending=False)
+    df = df[df['current_price']<=500].sort_values(by='current_price')
 
     if ea.is_dataframe_empty(df):
         subject = "No hedonism wine discounts today"

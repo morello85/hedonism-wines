@@ -16,8 +16,8 @@ db_path = os.getenv('DB_PATH')
 # Establish a connection to an in-memory DuckDB database
 conn = duckdb.connect(database=db_path, read_only=False)
 
-df = q.query_discounted_items()
-df = df[df['current_price']<=500].sort_values(by='current_price',ascending=False)
+#df = q.query_discounted_items()
+#df = df[df['current_price']<=500].sort_values(by='current_price',ascending=False)
 
 def is_dataframe_empty(df):
     return df.empty
