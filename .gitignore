@@ -1,2 +1,4 @@
 .env
 database.db
+data/
+sales_data/
