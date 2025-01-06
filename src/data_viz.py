@@ -3,6 +3,7 @@ import streamlit as st
 import matplotlib.pyplot as plt
 import pandas as pd
 import queries
+import re
 import duckdb
 import os
 from dotenv import load_dotenv
@@ -104,7 +105,53 @@ def visualise_stocks_and_median_values():
     y=alt.Y('max(value):Q',axis=primary_axis),
     color=alt.Color('legend:N', scale = custom_color_scale)
 )
-    st.altair_chart(my_chart, use_container_width=True)
+    st.altair_chart(my_chart, use_container_width=True
+					)
+
+def visualise_stocks_and_median_values_by_code():
+    df = queries.stocks_and_median_values_by_code()
+
+    # Add a title to the Streamlit app
+    st.title('Median Price Check By Code')
+
+    primary_axis = alt.Axis(title='Values', grid=False)
+
+    # Define custom color scale
+    custom_color_scale = alt.Scale(domain=['stock_count', 'median_price'], range=['blue', 'red'])
+
+    # Create a text input box for filtering the codes (allowing multiple codes)
+    code_filter = st.text_area('Enter codes (comma-separated):', value='HED36140, HED85155')
+
+    # Strip any leading/trailing whitespace from the input and split by comma
+    code_filter = code_filter.strip()
+    codes_list = [code.strip() for code in code_filter.split(',')]
+
+    # Escape any special characters in the item codes for regex use
+    escaped_codes = [re.escape(code) for code in codes_list]
+
+    # Join the escaped codes into a single regex pattern that matches any of the codes
+    regex_pattern = '|'.join(escaped_codes)
+
+    # Ensure that the 'code' column is string type
+    df['code'] = df['code'].astype(str)
+
+    # Filter the DataFrame based on the selected codes
+    filtered_df = df[df['code'].str.contains(regex_pattern, case=False, na=False)]
+
+    # Ensure that the filtered DataFrame is not empty
+    if not filtered_df.empty:
+        line_chart = alt.Chart(filtered_df).mark_line().encode(
+            x='import_date',
+            y='median_price:Q',  # Plotting median_price for each code
+            color='code:N',  # Color by each code
+            tooltip=['code', 'import_date', 'median_price']  # Tooltip to show relevant info
+        )
+
+        # Display the chart using Streamlit
+        st.altair_chart(line_chart, use_container_width=True)
+    else:
+        st.write(f"No data found for the entered codes.")
+
 
 def visualise_stocks_and_median_values_by_code():
     df = queries.stocks_and_median_values_by_code()
@@ -155,9 +202,6 @@ def visualise_units_sold():
 
 	# Add a title to the Streamlit app
 	st.title('Previous Day Units Sold')
-
-	#df
-	
 	st.data_editor(
             df,
             column_config={
@@ -182,41 +226,6 @@ def visualise_units_sold():
 	st.altair_chart(chart
 	                #, use_container_width=True
 	               )
-
-
-# def visualise_stocks_and_median_values():
-#     df = queries.stocks_and_median_values()
-
-#     # Add a title to the Streamlit app
-#     st.title('Stock and Median Price Check')
-
-#     # Create Altair chart
-#     primary_y_axis = alt.Axis(title='Stock Count', grid=False)
-#     secondary_y_axis = alt.Axis(title='Median Price', grid=False, orient='right')
-
-#     # Line chart for stock count
-#     line_chart_stock_count = alt.Chart(df).mark_line(color='darkblue').encode(
-#         x='import_date',
-#         y=alt.Y('stock_count:Q', axis=primary_y_axis)
-#     )
-
-#     # Line chart for median price 
-#     line_chart_median_price = alt.Chart(df).mark_line(color='cyan').encode(
-#         x='import_date',
-#         y=alt.Y('median_price:Q', axis=secondary_y_axis)
-# 	)
-
-#     # Combine both charts
-#     combined_chart = line_chart_stock_count + line_chart_median_price
-
-#     # Resolve scale for independent y-axes
-#     combined_chart = combined_chart.resolve_scale(
-#         y='independent'
-#     )
-
-#     # Display the chart using Streamlit Vega-Lite
-#     st.altair_chart(combined_chart, use_container_width=True)
-
 
 def visualise_price_search():
 

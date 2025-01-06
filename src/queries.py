@@ -118,7 +118,7 @@ def units_sold():
                         FROM whisky_stocks_table
                         WHERE import_date = CURRENT_DATE() -1
                        )
-                       SELECT CAST(CURRENT_DATE() AS DATE) AS import_date, a.code, 
+                       SELECT CAST(CURRENT_DATE() AS DATE) AS import_date, a.code,
 						a.title, 
 						a.url, 
 						a.price_gbp,
@@ -153,7 +153,7 @@ def units_sold():
 	filename = f"sales{today_date_file_name}.csv"  # Change "data" to your desired filename prefix
         
     # Define the path where you want to save the file
-	folder_path = "/Users/MacUser/hedonism-wines_app/sales_data/"  # Change this to your desired folder path
+	folder_path = "/Users/MacUser/hedonism-wines_fresh/sales_data/"  # Change this to your desired folder path
 	
     # Export dataframe
 	df.to_csv(folder_path + filename, index=False)
