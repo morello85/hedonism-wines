@@ -2,3 +2,5 @@
 database.db
 data/
 sales_data/
+database.db
+*.pack
