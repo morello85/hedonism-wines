@@ -72,6 +72,40 @@ def stocks_and_median_values():
 
 	return df
 
+def stocks_and_median_values_by_code():
+
+	# Execute SQL queries to create a table only for whisky records
+	results = conn.execute("""
+						    WITH x AS (
+                            SELECT
+						    MEDIAN (CAST(price_gbp AS FLOAT)) median_price,
+                              SUM (CAST(availability AS FLOAT)) total_availability,
+	                          import_date,
+						      code
+	                          FROM whisky_stocks_table 
+	                          GROUP BY import_date, code
+	                          ORDER BY 3 DESC),
+						y AS (
+						SELECT COUNT (DISTINCT median_price) price_changes_count,
+						code
+						FROM x
+						GROUP BY code)
+						SELECT x.*, y.price_changes_count
+						FROM x INNER JOIN y ON x.code = y.code
+	                """).fetchdf()
+
+	# Convert the results to a DataFrame
+	df = pd.DataFrame(results)
+
+	# Convert import_date to datetime
+	df['import_date'] = pd.to_datetime(df['import_date'])
+
+	# Extract date part
+	df['import_date'] = df['import_date'].dt.date
+	df['import_date'] = df['import_date'].astype(str).str[:10]
+
+	return df
+
 def units_sold():
 	results = conn.execute("""
                        WITH todays_items AS (             
