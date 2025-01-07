@@ -153,7 +153,9 @@ def units_sold():
 	filename = f"sales{today_date_file_name}.csv"  # Change "data" to your desired filename prefix
         
     # Define the path where you want to save the file
-	folder_path = "/Users/MacUser/hedonism-wines_fresh/sales_data/"  # Change this to your desired folder path
+	folder_path = "/Users/MacUser/hedonism-wines_fresh/sales_data"  # Change this to your desired folder path
+
+	df.head()
 	
     # Export dataframe
 	df.to_csv(folder_path + filename, index=False)

@@ -26,7 +26,7 @@ def fetch_data_from_api(url):
         filename = f"full-stock-list{today_date_file_name}.csv"  # Change "data" to your desired filename prefix
         
         # Define the path where you want to save the file
-        folder_path = "/Users/MacUser/hedonism-wines_app/data/"  # Change this to your desired folder path
+        folder_path = "/Users/MacUser/hedonism-wines_fresh/data/"  # Change this to your desired folder path
 
         # Check if the file already exists and delete it if it does
         file_path = folder_path + filename
