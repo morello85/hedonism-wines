@@ -7,6 +7,8 @@ import queries as q
 import pandas as pd
 import os
 from dotenv import load_dotenv
+import subprocess  # Import subprocess module to run shell commands
+
 
 # Load environment variables from .env file
 load_dotenv()
@@ -58,6 +60,9 @@ def main():
         html_table = df.to_html(index=False)
         subject = "hedonism wine discounts for you today"
         ea.send_email(subject, html_table)
+
+    # Run streamlit after completing the main script
+    subprocess.run(["streamlit", "run", "data_viz.py"])
     
 if __name__ == "__main__":
     main()

@@ -155,7 +155,7 @@ def units_sold():
     # Define the path where you want to save the file
 	folder_path = "/Users/MacUser/hedonism-wines_fresh/sales_data"  # Change this to your desired folder path
 
-	df.head()
+
 	
     # Export dataframe
 	df.to_csv(folder_path + filename, index=False)
