@@ -102,6 +102,9 @@ def create_or_replace_tables(df):
             'title': 'VARCHAR',
             'vintage': 'VARCHAR',
             'import_date': 'DATE'}
+            
+            # Set parallelism if your system supports it
+            conn.execute('PRAGMA threads=4;')  # Adjust number of threads based on your system
 
             df.to_sql('stocks_table', con=conn, index=False, if_exists='append', chunksize=chunksize,method='multi', dtype=dtype)
 

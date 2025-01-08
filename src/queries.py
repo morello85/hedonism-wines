@@ -1,5 +1,4 @@
 import pandas as pd
-from sqlalchemy import create_engine
 import duckdb
 from datetime import datetime
 import os
@@ -11,12 +10,11 @@ load_dotenv()
 # Specify the file path for the DuckDB database
 db_path = os.getenv('DB_PATH')
 
-# Establish a connection to an in-memory DuckDB database
-conn = duckdb.connect(database=db_path, read_only=False)
 
 def query_discounted_items():
-    # Execute SQL queries to create a table only for whisky records
-    results = conn.execute("""
+    """Query discounted items in the whisky stocks."""
+    with duckdb.connect(database=db_path, read_only=False) as conn:
+        results = conn.execute("""
             WITH current_price AS (
                 SELECT code, price_gbp, import_date, title, url
                 FROM whisky_stocks_table_today
@@ -28,7 +26,7 @@ def query_discounted_items():
             ),
             output AS (
                 SELECT  c.import_date AS current_date,
-						c.code, 
+                        c.code, 
                         c.title,
                         c.url,
                         c.price_gbp AS current_price,
@@ -39,157 +37,132 @@ def query_discounted_items():
                 JOIN historical_max_price m ON c.code = m.code
             )
             SELECT * FROM output WHERE discount > 0
-			ORDER BY discount DESC
-    """).fetchdf()
+            ORDER BY discount DESC
+        """).fetchdf()
 
-    # Convert the results to a DataFrame
     df = pd.DataFrame(results)
-        
     return df
 
 
 def stocks_and_median_values():
+    """Get stock count and median price by import date."""
+    with duckdb.connect(database=db_path, read_only=False) as conn:
+        results = conn.execute("""
+            SELECT COUNT (*) stock_count,
+                   MEDIAN (CAST(price_gbp AS FLOAT)) median_price,
+                   SUM (CAST(availability AS FLOAT)) total_availability,
+                   import_date
+            FROM whisky_stocks_table 
+            GROUP BY import_date
+            ORDER BY 3 DESC
+        """).fetchdf()
 
-	# Execute SQL queries to create a table only for whisky records
-	results = conn.execute("""SELECT COUNT (*) stock_count,
-	                          MEDIAN (CAST(price_gbp AS FLOAT)) median_price,
-                              SUM (CAST(availability AS FLOAT)) total_availability,
-	                          import_date
-	                          FROM whisky_stocks_table 
-	                          GROUP BY import_date
-	                          ORDER BY 3 DESC
-	                """).fetchdf()
+    df = pd.DataFrame(results)
+    df['import_date'] = pd.to_datetime(df['import_date']).dt.date.astype(str).str[:10]
+    return df
 
-	# Convert the results to a DataFrame
-	df = pd.DataFrame(results)
-
-	# Convert import_date to datetime
-	df['import_date'] = pd.to_datetime(df['import_date'])
-
-	# Extract date part
-	df['import_date'] = df['import_date'].dt.date
-	df['import_date'] = df['import_date'].astype(str).str[:10]
-
-	return df
 
 def stocks_and_median_values_by_code():
+    """Get stock and median values by code."""
+    with duckdb.connect(database=db_path, read_only=False) as conn:
+        results = conn.execute("""
+            WITH x AS (
+                SELECT
+                MEDIAN (CAST(price_gbp AS FLOAT)) median_price,
+                SUM (CAST(availability AS FLOAT)) total_availability,
+                import_date,
+                code
+                FROM whisky_stocks_table 
+                GROUP BY import_date, code
+                ORDER BY 3 DESC),
+            y AS (
+                SELECT COUNT (DISTINCT median_price) price_changes_count,
+                code
+                FROM x
+                GROUP BY code)
+            SELECT x.*, y.price_changes_count
+            FROM x INNER JOIN y ON x.code = y.code
+        """).fetchdf()
 
-	# Execute SQL queries to create a table only for whisky records
-	results = conn.execute("""
-						    WITH x AS (
-                            SELECT
-						    MEDIAN (CAST(price_gbp AS FLOAT)) median_price,
-                              SUM (CAST(availability AS FLOAT)) total_availability,
-	                          import_date,
-						      code
-	                          FROM whisky_stocks_table 
-	                          GROUP BY import_date, code
-	                          ORDER BY 3 DESC),
-						y AS (
-						SELECT COUNT (DISTINCT median_price) price_changes_count,
-						code
-						FROM x
-						GROUP BY code)
-						SELECT x.*, y.price_changes_count
-						FROM x INNER JOIN y ON x.code = y.code
-	                """).fetchdf()
+    df = pd.DataFrame(results)
+    df['import_date'] = pd.to_datetime(df['import_date']).dt.date.astype(str).str[:10]
+    return df
 
-	# Convert the results to a DataFrame
-	df = pd.DataFrame(results)
-
-	# Convert import_date to datetime
-	df['import_date'] = pd.to_datetime(df['import_date'])
-
-	# Extract date part
-	df['import_date'] = df['import_date'].dt.date
-	df['import_date'] = df['import_date'].astype(str).str[:10]
-
-	return df
 
 def units_sold():
-	results = conn.execute("""
-                       WITH todays_items AS (             
-                        SELECT code, title, url, price_gbp, availability, import_date 
-                        FROM whisky_stocks_table
-                        WHERE import_date = CURRENT_DATE()
-                       ),
-                       yesterdays_items AS (
-                        SELECT code, title, url, price_gbp, availability, import_date  
-                        FROM whisky_stocks_table
-                        WHERE import_date = CURRENT_DATE() -1
-                       )
-                       SELECT CAST(CURRENT_DATE() AS DATE) AS import_date, a.code,
-						a.title, 
-						a.url, 
-						a.price_gbp,
-						a.today_availability availability,
-                        CAST(a.yesterday_availability AS FLOAT) - CAST(a.today_availability AS FLOAT) units_sold
-                       FROM 
-                       (
-                       SELECT 
-                       CAST (y.code AS STRING) ||'-'|| CAST (y.availability AS STRING) yesterday_code_availability,
-                       CAST (t.code AS STRING) ||'-'|| CAST (t.availability AS STRING) today_code_availability,
-                       y.code,
-                       y.title,
-                       y.url,
-                       y.price_gbp,
-                       y.availability yesterday_availability,
-                       t.availability today_availability
-                       FROM yesterdays_items y LEFT OUTER JOIN todays_items t
-                       ON y.code = t.code
-                       ) a
-                       WHERE a.today_code_availability <> yesterday_code_availability
-					   AND CAST(a.yesterday_availability AS FLOAT) - CAST(a.today_availability AS FLOAT) > 0
-                       ORDER BY price_gbp DESC
-                """).fetchdf()
+    """Get the units sold for the current and previous day."""
+    with duckdb.connect(database=db_path, read_only=False) as conn:
+        results = conn.execute("""
+            WITH todays_items AS (             
+                SELECT code, title, url, price_gbp, availability, import_date 
+                FROM whisky_stocks_table
+                WHERE import_date = CURRENT_DATE()
+            ),
+            yesterdays_items AS (
+                SELECT code, title, url, price_gbp, availability, import_date  
+                FROM whisky_stocks_table
+                WHERE import_date = CURRENT_DATE() -1
+            )
+            SELECT CAST(CURRENT_DATE() AS DATE) AS import_date, a.code,
+                   a.title, 
+                   a.url, 
+                   a.price_gbp,
+                   a.today_availability availability,
+                   CAST(a.yesterday_availability AS FLOAT) - CAST(a.today_availability AS FLOAT) units_sold
+            FROM 
+            (
+                SELECT 
+                CAST (y.code AS STRING) ||'-'|| CAST (y.availability AS STRING) yesterday_code_availability,
+                CAST (t.code AS STRING) ||'-'|| CAST (t.availability AS STRING) today_code_availability,
+                y.code,
+                y.title,
+                y.url,
+                y.price_gbp,
+                y.availability yesterday_availability,
+                t.availability today_availability
+                FROM yesterdays_items y LEFT OUTER JOIN todays_items t
+                ON y.code = t.code
+            ) a
+            WHERE a.today_code_availability <> yesterday_code_availability
+            AND CAST(a.yesterday_availability AS FLOAT) - CAST(a.today_availability AS FLOAT) > 0
+            ORDER BY price_gbp DESC
+        """).fetchdf()
 
-	# Convert the results to a DataFrame
-	df = pd.DataFrame(results)
-	
-    # Get today's date
-	today_date_file_name = datetime.now().strftime("_%Y_%m_%d")
+    df = pd.DataFrame(results)
+    today_date_file_name = datetime.now().strftime("_%Y_%m_%d")
+    filename = f"sales{today_date_file_name}.csv"
+    folder_path = "/Users/MacUser/hedonism-wines_fresh/sales_data/"
 
-    # Define filename with today's date appended
-	filename = f"sales{today_date_file_name}.csv"  # Change "data" to your desired filename prefix
-        
-    # Define the path where you want to save the file
-	folder_path = "/Users/MacUser/hedonism-wines_fresh/sales_data/"  # Change this to your desired folder path
+    df.to_csv(folder_path + filename, index=False)
+    df['import_date'] = pd.to_datetime(df['import_date']).dt.date.astype(str).str[:10]
+    return df
 
 
-	
-    # Export dataframe
-	df.to_csv(folder_path + filename, index=False)
+def price_search():
+    """Search for prices in the whisky stock table."""
+    with duckdb.connect(database=db_path, read_only=False) as conn:
+        results = conn.execute("""
+            SELECT 
+                import_date, 
+                code,
+                title,
+                price_gbp price_gbp,
+                url
+            FROM whisky_stocks_table_today 
+        """).fetchdf()
 
-	# Convert import_date to datetime
-	df['import_date'] = pd.to_datetime(df['import_date'])
+    df = pd.DataFrame(results)
+    return df
 
-	# Extract date part
-	df['import_date'] = df['import_date'].dt.date
-	df['import_date'] = df['import_date'].astype(str).str[:10]
-
-	return df
-
-def price_search ():
-	results = conn.execute("""SELECT 
-						  import_date, 
-						  code,
-						  title,
-						  price_gbp price_gbp,
-						  url						  
-                          FROM whisky_stocks_table_today 
-                """).fetchdf()
-
-	# Convert the results to a DataFrame
-	df = pd.DataFrame(results)
-
-	return df
 
 def main():
     # Your main logic for processing
-    ...
+    discounted_items = query_discounted_items()
+    print(discounted_items)
+    stocks_data = stocks_and_median_values()
+    print(stocks_data)
+    # Continue with the rest of the logic
 
-    # Make sure to close the connection after all operations are done
-    conn.close()
 
 if __name__ == "__main__":
     main()
