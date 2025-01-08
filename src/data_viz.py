@@ -12,7 +12,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Read the database file path from the environment variable
-db_path = os.getenv('DB_PATH')
+#db_path = os.getenv('DB_PATH')
+db_path = os.getenv('DB_PATH', ':memory:')  # Use ':memory:' if DB_PATH is not set
+
 
 
 def visualise_discounted_items():

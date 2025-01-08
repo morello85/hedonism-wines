@@ -8,8 +8,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Specify the file path for the DuckDB database
-db_path = os.getenv('DB_PATH')
-
+#db_path = os.getenv('DB_PATH')
+db_path = os.getenv('DB_PATH', ':memory:')  # Use ':memory:' if DB_PATH is not set
 
 def query_discounted_items():
     """Query discounted items in the whisky stocks."""
