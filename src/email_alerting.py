@@ -3,21 +3,18 @@ import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 import queries as q
-import duckdb
+# import duckdb
 import os
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Read the database file path from the environment variable
-db_path = os.getenv('DB_PATH')
+# # Read the database file path from the environment variable
+# db_path = os.getenv('DB_PATH')
 
-# Establish a connection to an in-memory DuckDB database
-conn = duckdb.connect(database=db_path, read_only=False)
-
-#df = q.query_discounted_items()
-#df = df[df['current_price']<=500].sort_values(by='current_price',ascending=False)
+# # Establish a connection to an in-memory DuckDB database
+# conn = duckdb.connect(database=db_path, read_only=False)
 
 def is_dataframe_empty(df):
     return df.empty
@@ -53,12 +50,12 @@ def send_email(subject, body):
     
     return
 
-def main():
-    # Your main logic for processing
-    ...
+# def main():
+#     # Your main logic for processing
+#     ...
 
-    # Make sure to close the connection after all operations are done
-    conn.close()
+#     # Make sure to close the connection after all operations are done
+#     conn.close()
 
-if __name__ == "__main__":
-    main()
+# if __name__ == "__main__":
+#     main()
