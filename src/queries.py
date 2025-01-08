@@ -9,7 +9,7 @@ load_dotenv()
 
 # Specify the file path for the DuckDB database
 #db_path = os.getenv('DB_PATH')
-db_path = os.getenv('DB_PATH', 'TEMP_DB_PATH')  # Use TEMP_DB_PATH when deploying
+db_path = os.getenv('DB_PATH', os.getenv('TEMP_DB_PATH', '/tmp/database.duckdb'))
 
 def query_discounted_items():
     """Query discounted items in the whisky stocks."""

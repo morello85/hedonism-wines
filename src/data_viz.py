@@ -13,9 +13,7 @@ load_dotenv()
 
 # Read the database file path from the environment variable
 #db_path = os.getenv('DB_PATH')
-db_path = os.getenv('DB_PATH', 'TEMP_DB_PATH')  # Use TEMP_DB_PATH when deploying
-
-
+db_path = os.getenv('DB_PATH', os.getenv('TEMP_DB_PATH', '/tmp/database.duckdb'))
 
 def visualise_discounted_items():
     """Visualize discounted items."""
