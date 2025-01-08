@@ -52,4 +52,13 @@ def send_email(subject, body):
         print("Failed to send email. Error:", str(e))
     
     return
-conn.close()
+
+def main():
+    # Your main logic for processing
+    ...
+
+    # Make sure to close the connection after all operations are done
+    conn.close()
+
+if __name__ == "__main__":
+    main()
