@@ -13,7 +13,7 @@ load_dotenv()
 
 # Read the database file path from the environment variable
 #db_path = os.getenv('DB_PATH')
-db_path = os.getenv('DB_PATH', ':memory:')  # Use ':memory:' if DB_PATH is not set
+db_path = os.getenv('DB_PATH', 'TEMP_DB_PATH')  # Use TEMP_DB_PATH when deploying
 
 
 
