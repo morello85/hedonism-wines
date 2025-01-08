@@ -153,7 +153,7 @@ def units_sold():
 	filename = f"sales{today_date_file_name}.csv"  # Change "data" to your desired filename prefix
         
     # Define the path where you want to save the file
-	folder_path = "/Users/MacUser/hedonism-wines_fresh/sales_data"  # Change this to your desired folder path
+	folder_path = "/Users/MacUser/hedonism-wines_fresh/sales_data/"  # Change this to your desired folder path
 
 
 	
@@ -184,4 +184,12 @@ def price_search ():
 
 	return df
 
-#conn.close()
+def main():
+    # Your main logic for processing
+    ...
+
+    # Make sure to close the connection after all operations are done
+    conn.close()
+
+if __name__ == "__main__":
+    main()

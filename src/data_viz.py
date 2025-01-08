@@ -108,51 +108,6 @@ def visualise_stocks_and_median_values():
     st.altair_chart(my_chart, use_container_width=True
 					)
 
-# def visualise_stocks_and_median_values_by_code():
-#     df = queries.stocks_and_median_values_by_code()
-
-#     # Add a title to the Streamlit app
-#     st.title('Median Price Check By Code')
-
-#     primary_axis = alt.Axis(title='Values', grid=False)
-
-#     # Define custom color scale
-#     custom_color_scale = alt.Scale(domain=['stock_count', 'median_price'], range=['blue', 'red'])
-
-#     # Create a text input box for filtering the codes (allowing multiple codes)
-#     code_filter = st.text_area('Enter codes (comma-separated):', value='HED36140, HED85155')
-
-#     # Strip any leading/trailing whitespace from the input and split by comma
-#     code_filter = code_filter.strip()
-#     codes_list = [code.strip() for code in code_filter.split(',')]
-
-#     # Escape any special characters in the item codes for regex use
-#     escaped_codes = [re.escape(code) for code in codes_list]
-
-#     # Join the escaped codes into a single regex pattern that matches any of the codes
-#     regex_pattern = '|'.join(escaped_codes)
-
-#     # Ensure that the 'code' column is string type
-#     df['code'] = df['code'].astype(str)
-
-#     # Filter the DataFrame based on the selected codes
-#     filtered_df = df[df['code'].str.contains(regex_pattern, case=False, na=False)]
-
-#     # Ensure that the filtered DataFrame is not empty
-#     if not filtered_df.empty:
-#         line_chart = alt.Chart(filtered_df).mark_line().encode(
-#             x='import_date',
-#             y='median_price:Q',  # Plotting median_price for each code
-#             color='code:N',  # Color by each code
-#             tooltip=['code', 'import_date', 'median_price']  # Tooltip to show relevant info
-#         )
-
-#         # Display the chart using Streamlit
-#         st.altair_chart(line_chart, use_container_width=True)
-#     else:
-#         st.write(f"No data found for the entered codes.")
-
-
 def visualise_stocks_and_median_values_by_code():
     df = queries.stocks_and_median_values_by_code()
 
@@ -284,11 +239,17 @@ def visualise_price_search():
 	                #, use_container_width=True
 	               )
 
-conn.close()
+def main():
+    # Your main logic for processing
+    visualise_discounted_items()
+    visualise_stocks_and_median_values()
+    visualise_stocks_and_median_values_by_code()
+    visualise_units_sold()
+    visualise_price_search()
+    # Make sure to close the connection after all operations are done
+    conn.close()
+
+if __name__ == "__main__":
+    main()
 
 
-visualise_discounted_items()
-visualise_stocks_and_median_values()
-visualise_stocks_and_median_values_by_code()
-visualise_units_sold()
-visualise_price_search()
