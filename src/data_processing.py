@@ -14,11 +14,6 @@ load_dotenv()
 # Suppress all warnings
 warnings.filterwarnings("ignore")
 
-# Read the database file path from the environment variable
-#folder_path = os.getenv('LOCAL_FOLDER')
-
-#folder_path = '/Users/MacUser/hedonism-wines_app/data'
-
 def read_csv_files_in_folder(folder_path):
     # Step 1: Read all files into dataframes
     csv_files = glob.glob(f"{folder_path}/*.csv")
@@ -106,9 +101,12 @@ def create_or_replace_tables(df):
             # Set parallelism if your system supports it
             conn.execute('PRAGMA threads=4;')  # Adjust number of threads based on your system
 
+            start_time = time.time()
+
             df.to_sql('stocks_table', con=conn, index=False, if_exists='append', chunksize=chunksize,method='multi', dtype=dtype)
 
-            print ("Main table recreated.")
+            end_time = time.time()
+            print (f"Main table recreated taking {end_time - start_time} seconds to run.")
 
             conn.execute("DROP VIEW IF EXISTS whisky_stocks_table")
             print ("whisky_stocks_table view dropped successfully.")
