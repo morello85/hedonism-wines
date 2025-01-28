@@ -9,9 +9,6 @@ import os
 from dotenv import load_dotenv
 import time
 import subprocess  # Import subprocess module to run shell commands
-import duckdb
-import psutil
-
 
 # Load environment variables from .env file
 load_dotenv()
@@ -22,34 +19,6 @@ local_sales_folder = os.getenv('LOCAL_SALES_FOLDER')
 api_files_bucket_name = os.getenv('API_FILES_BUCKET_NAME')
 sales_files_bucket_name = os.getenv('SALES_FILES_BUCKET_NAME')
 db_path = os.getenv('DB_PATH')
-
-
-def kill_process_locking_file(lock_file):
-    """Kills any process that is locking the specified file."""
-    for proc in psutil.process_iter(['pid', 'name', 'open_files']):
-        try:
-            if proc.info['open_files']:
-                for file in proc.info['open_files']:
-                    if file.path == lock_file:
-                        print(f"Process {proc.info['name']} (PID {proc.info['pid']}) is locking the file {lock_file}. Terminating it...")
-                        proc.kill()  # Kill the process
-                        return True
-        except (psutil.NoSuchProcess, psutil.AccessDenied, psutil.ZombieProcess):
-            pass  # Ignore processes that can't be accessed or terminated
-    return False
-
-
-def check_db_lock():
-    """Check if the DuckDB database is locked or accessible."""
-    try:
-        conn = duckdb.connect(database=db_path, read_only=False)  # Open DuckDB database
-        conn.execute('SELECT 1')  # Run a simple query to check the database status
-        conn.close()
-        return True  # No issues, return True
-    except Exception as e:
-        print(f"Error encountered: {e}")
-        return False  # Lock or connection issue
-
 
 def process_api_data():
     """Fetch data from the API and upload it to S3."""
@@ -94,7 +63,7 @@ def run_streamlit():
 
 def main():
     """Main function to execute the workflow."""
-    if check_db_lock():
+    if True:
         process_api_data()
         df = dp.read_csv_files_in_folder(local_folder)
         print("Data read successfully.")
@@ -109,14 +78,6 @@ def main():
         run_streamlit()
     else:
         print("Database is locked. Attempting to kill the locking process...")
-
-        # Try killing the process that holds the lock
-        if kill_process_locking_file(db_path):
-            print("Locking process terminated. Proceeding with the workflow.")
-            main()  # Retry the main function after killing the lock process
-        else:
-            print("No locking process found or failed to terminate the process. Please try again later.")
-
 
 if __name__ == "__main__":
     main()
