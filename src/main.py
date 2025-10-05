@@ -22,7 +22,8 @@ db_path = os.getenv('DB_PATH')
 
 def process_api_data():
     """Fetch data from the API and upload it to S3."""
-    url = 'https://hedonism.co.uk/sites/default/files/full-stock-list.csv'
+    url = 'https://hedonism.co.uk/full-stock-list.csv'
+    #url = 'https://hedonism.co.uk/sites/default/files/full-stock-list.csv'
     df = api.fetch_data_from_api(url)
     if df is not None:
         print("API data fetched successfully.")
