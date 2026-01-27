@@ -55,7 +55,11 @@ def run_streamlit():
 def main():
     """Main function to execute the workflow."""
     start_time = time.time()
+
     process_api_data()
+    df = dp.read_csv_files_in_folder(settings.local_folder)
+    print("Data read successfully.")
+    
     dp.create_or_replace_tables(settings.local_folder)
     print("Data processed successfully.")
 
