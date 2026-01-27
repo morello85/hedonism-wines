@@ -65,7 +65,7 @@ def read_csv_files_in_folder(folder_path):
     return combined_df
 
 #@st.cache_data
-def create_or_replace_tables(df):
+def create_or_replace_tables(folder_path):
     start_time = time.time()
 
     # Read the database file path from the environment variable
@@ -74,35 +74,44 @@ def create_or_replace_tables(df):
     try:
         # Establish a connection to the DuckDB database
         with duckdb.connect(database=db_path) as conn:
-            # Drop the existing stocks_table if it exists
-            conn.execute("DROP TABLE IF EXISTS stocks_table")
-            logger.info("Tables dropped successfully.")
-
-            # Create or replace the stocks_table
-            chunksize = 1000  # Adjust the chunk size as needed
-
-            dtype = {
-            'abv': 'DOUBLE',
-            'availability': 'VARCHAR',
-            'code': 'VARCHAR',
-            'country': 'VARCHAR',
-            'type': 'VARCHAR',
-            'url': 'VARCHAR',
-            'price_gbp': 'DOUBLE',
-            'price_ex_vat': 'DOUBLE',
-            'price_incl_vat': 'DOUBLE',
-            'size': 'VARCHAR',
-            'style': 'VARCHAR',
-            'title': 'VARCHAR',
-            'vintage': 'VARCHAR',
-            'import_date': 'DATE'}
-            
             # Set parallelism if your system supports it
             conn.execute('PRAGMA threads=4;')  # Adjust number of threads based on your system
 
+            csv_glob = os.path.join(folder_path, "*.csv")
             start_time = time.time()
-
-            df.to_sql('stocks_table', con=conn, index=False, if_exists='append', chunksize=chunksize,method='multi', dtype=dtype)
+            conn.execute(
+                """
+                CREATE OR REPLACE TABLE stocks_table AS
+                WITH raw AS (
+                    SELECT *
+                    FROM read_csv_auto(
+                        ?,
+                        union_by_name=true,
+                        filename=true
+                    )
+                )
+                SELECT
+                    TRY_CAST("ABV" AS DOUBLE) AS abv,
+                    "Available" AS availability,
+                    "Code" AS code,
+                    "Country" AS country,
+                    "Group" AS type,
+                    "Link" AS url,
+                    TRY_CAST("Price (GBP)" AS DOUBLE) AS price_gbp,
+                    TRY_CAST("Price (ex-VAT)" AS DOUBLE) AS price_ex_vat,
+                    TRY_CAST("Price (inc VAT)" AS DOUBLE) AS price_incl_vat,
+                    "Size" AS size,
+                    "Style" AS style,
+                    "Title" AS title,
+                    "Vintage" AS vintage,
+                    TRY_STRPTIME(
+                        regexp_extract(filename, '(\\d{4}_\\d{2}_\\d{2})', 1),
+                        '%Y_%m_%d'
+                    )::DATE AS import_date
+                FROM raw
+                """,
+                [csv_glob],
+            )
 
             end_time = time.time()
             logger.info("Main table recreated taking %s seconds to run.", end_time - start_time)
