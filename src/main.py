@@ -5,6 +5,7 @@ import email_alerting as ea
 import athena_queries as aq
 import queries as q
 from config import load_settings
+import os
 import time
 import subprocess  # Import subprocess module to run shell commands
 
@@ -48,6 +49,9 @@ def email_discount_alert():
 
 def run_streamlit():
     """Run the Streamlit app after the script completes."""
+    if os.getenv("SKIP_STREAMLIT", "").lower() in {"1", "true", "yes"}:
+        print("Skipping Streamlit launch because SKIP_STREAMLIT is set.")
+        return
     time.sleep(5)  # Add a 5-second delay before running Streamlit
     subprocess.run(["streamlit", "run", "data_viz.py"])
 
