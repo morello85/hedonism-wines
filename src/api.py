@@ -2,9 +2,9 @@ import requests
 import pandas as pd
 from io import StringIO
 from datetime import datetime
-import os
+from pathlib import Path
 
-def fetch_data_from_api(url):
+def fetch_data_from_api(url, output_folder: Path, timeout: int = 30):
     # Define headers
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
@@ -12,7 +12,12 @@ def fetch_data_from_api(url):
     }
 
     # Make request with headers
-    response = requests.get(url, headers=headers)
+    try:
+        response = requests.get(url, headers=headers, timeout=timeout)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        print(f"Failed to fetch data: {exc}")
+        return None
 
     # Check if request was successful
     if response.status_code == 200:
@@ -25,22 +30,16 @@ def fetch_data_from_api(url):
         # Define filename with today's date appended
         filename = f"full-stock-list{today_date_file_name}.csv"  # Change "data" to your desired filename prefix
         
-        # Define the path where you want to save the file
-        folder_path = "/Users/MacUser/hedonism-wines_fresh/data/"  # Change this to your desired folder path
-
-        # Check if the file already exists and delete it if it does
-        file_path = folder_path + filename
-        if os.path.exists(file_path):
-            os.remove(file_path)
-            print("Existing file deleted.")
+        # Ensure output folder exists
+        output_folder.mkdir(parents=True, exist_ok=True)
+        file_path = output_folder / filename
         
         df = pd.read_csv(csv_data)
 
         # Save DataFrame to CSV with the modified filename
-        df.to_csv(folder_path + filename, index=False)
+        df.to_csv(file_path, index=False)
         print("File saved successfully.")
         
         return df
-    else:
-        print("Failed to fetch data:", response.status_code)
-        return None
+    print("Failed to fetch data:", response.status_code)
+    return None

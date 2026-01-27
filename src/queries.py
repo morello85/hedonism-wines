@@ -1,6 +1,8 @@
 import pandas as pd
 import duckdb
 from datetime import datetime
+from pathlib import Path
+from typing import Optional
 import os
 from dotenv import load_dotenv
 
@@ -89,7 +91,7 @@ def stocks_and_median_values_by_code():
     return df
 
 
-def units_sold():
+def units_sold(output_folder: Optional[Path] = None):
     """Get the units sold for the current and previous day."""
     with duckdb.connect(database=db_path, read_only=False) as conn:
         results = conn.execute("""
@@ -130,10 +132,11 @@ def units_sold():
 
     df = pd.DataFrame(results)
     today_date_file_name = datetime.now().strftime("_%Y_%m_%d")
-    filename = f"sales{today_date_file_name}.csv"
-    folder_path = "/Users/MacUser/hedonism-wines_fresh/sales_data/"
-
-    df.to_csv(folder_path + filename, index=False)
+    if output_folder:
+        output_folder.mkdir(parents=True, exist_ok=True)
+        filename = f"sales{today_date_file_name}.csv"
+        file_path = output_folder / filename
+        df.to_csv(file_path, index=False)
     df['import_date'] = pd.to_datetime(df['import_date']).dt.date.astype(str).str[:10]
     return df
 
