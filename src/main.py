@@ -4,30 +4,20 @@ import s3upload as su
 import email_alerting as ea
 import athena_queries as aq
 import queries as q
-import pandas as pd
-import os
-from dotenv import load_dotenv
+from config import load_settings
 import time
 import subprocess  # Import subprocess module to run shell commands
 
-# Load environment variables from .env file
-load_dotenv()
-
-# Specify data local folders and S3 buckets
-local_folder = os.getenv('LOCAL_FOLDER')
-local_sales_folder = os.getenv('LOCAL_SALES_FOLDER')
-api_files_bucket_name = os.getenv('API_FILES_BUCKET_NAME')
-sales_files_bucket_name = os.getenv('SALES_FILES_BUCKET_NAME')
-db_path = os.getenv('DB_PATH')
+settings = load_settings()
 
 def process_api_data():
     """Fetch data from the API and upload it to S3."""
     url = 'https://hedonism.co.uk/full-stock-list.csv'
     #url = 'https://hedonism.co.uk/sites/default/files/full-stock-list.csv'
-    df = api.fetch_data_from_api(url)
+    df = api.fetch_data_from_api(url, settings.local_folder)
     if df is not None:
         print("API data fetched successfully.")
-        su.upload_files_to_s3(local_folder, api_files_bucket_name)
+        su.upload_files_to_s3(settings.local_folder, settings.api_files_bucket_name)
         print("API stocks data uploaded to S3 successfully.")
     else:
         print("Failed to fetch data from API.")
@@ -36,8 +26,8 @@ def process_api_data():
 
 def process_sales_data():
     """Process sales data and upload to S3."""
-    q.units_sold()
-    su.upload_files_to_s3(local_sales_folder, sales_files_bucket_name)
+    q.units_sold(settings.local_sales_folder)
+    su.upload_files_to_s3(settings.local_sales_folder, settings.sales_files_bucket_name)
     print("Sales data created and loaded to S3 successfully.")
 
 
@@ -64,21 +54,18 @@ def run_streamlit():
 
 def main():
     """Main function to execute the workflow."""
-    if True:
-        process_api_data()
-        df = dp.read_csv_files_in_folder(local_folder)
-        print("Data read successfully.")
+    start_time = time.time()
+    process_api_data()
+    dp.create_or_replace_tables(settings.local_folder)
+    print("Data processed successfully.")
 
-        dp.create_or_replace_tables(df)
-        print("Data processed successfully.")
+    process_sales_data()
+    aq.athena_tables_creation()
 
-        process_sales_data()
-        aq.athena_tables_creation()
-
-        email_discount_alert()
-        run_streamlit()
-    else:
-        print("Database is locked. Attempting to kill the locking process...")
+    email_discount_alert()
+    run_streamlit()
+    end_time = time.time()
+    print(f"Full pipeline completed in {end_time - start_time:.2f} seconds.")
 
 if __name__ == "__main__":
     main()
