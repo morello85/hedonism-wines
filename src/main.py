@@ -54,11 +54,13 @@ def run_streamlit():
 
 def main():
     """Main function to execute the workflow."""
+    start_time = time.time()
+
     process_api_data()
     df = dp.read_csv_files_in_folder(settings.local_folder)
     print("Data read successfully.")
-
-    dp.create_or_replace_tables(df)
+    
+    dp.create_or_replace_tables(settings.local_folder)
     print("Data processed successfully.")
 
     process_sales_data()
@@ -66,6 +68,8 @@ def main():
 
     email_discount_alert()
     run_streamlit()
+    end_time = time.time()
+    print(f"Full pipeline completed in {end_time - start_time:.2f} seconds.")
 
 if __name__ == "__main__":
     main()
