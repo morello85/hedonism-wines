@@ -2,11 +2,6 @@ import queries as q
 import re
 import pandas as pd
 
-df = q.price_search()
-print(df.head(20))
-
-# Assuming df is your DataFrame obtained from q.price_search()
-
 def extract_distillery_and_age(title):
     match = re.search(r'(\d{4})|(\d+)\s*(\w+)|(\w+)\s*(\d+)', title)
     if match:
@@ -17,4 +12,12 @@ def extract_distillery_and_age(title):
         return pd.Series([None, None])
 
 
-df[['distillery', 'year_age']] = df['title'].apply(extract_distillery_and_age)
+def main():
+    df = q.price_search()
+    print(df.head(20))
+    df[['distillery', 'year_age']] = df['title'].apply(extract_distillery_and_age)
+    return df
+
+
+if __name__ == "__main__":
+    main()
