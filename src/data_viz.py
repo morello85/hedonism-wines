@@ -25,19 +25,14 @@ def visualise_discounted_items():
     if df.empty:
         st.write("Sorry, no available discounts today")
     else:
-        left_value = st.text_input('Enter lower discount bound:', value='100')
-        right_value = st.text_input('Enter upper discount bound:', value='5000')
-        discount_perc_value = st.text_input('Enter discount percentage (%):', value='10')
+        left_value = st.number_input('Enter lower discount bound:', min_value=0, value=100, step=50)
+        right_value = st.number_input('Enter upper discount bound:', min_value=0, value=5000, step=50)
+        discount_perc_value = st.number_input('Enter discount percentage (%):', min_value=0.0, value=10.0, step=1.0)
         title_filter = st.text_input('Enter title:', value='Karuizawa')
-
-        # Convert the input values to integers
-        left_value = int(left_value)
-        right_value = int(right_value)
-        discount_perc_value = float(discount_perc_value)
 
         # Create a slider for selecting the price range
         discount_range = st.slider('Select discount range (GBP)', min_value=100, max_value=2000, 
-                                   value=(left_value, right_value), step=100)
+                                   value=(int(left_value), int(right_value)), step=100)
 
         # Filter the DataFrame based on the selected price range and title filter
         filtered_df = df[
@@ -54,7 +49,7 @@ def visualise_discounted_items():
                 "url": st.column_config.LinkColumn(
                     "link",
                     help="Click to access the whisky page on hedonism wines",
-                    validate="^https://[a-z]+\.streamlit\.app$",
+                    validate="^https?://.*$",
                     max_chars=100,
                     display_text="https://(.*?)\.streamlit\.app"
                 )
@@ -136,7 +131,7 @@ def visualise_units_sold():
             "url": st.column_config.LinkColumn(
                 "link",
                 help="Click to access the whisky page on hedonism wines",
-                validate="^https://[a-z]+\.streamlit\.app$",
+                validate="^https?://.*$",
                 max_chars=100,
                 display_text="https://(.*?)\.streamlit\.app"
             )
@@ -160,15 +155,12 @@ def visualise_price_search():
 
     st.title('Price Search')
 
-    left_value = st.text_input('Enter left value:', value='1000', key=1)
-    right_value = st.text_input('Enter right value:', value='20000', key=2)
-    title_filter = st.text_input('Enter title:', value='Karuizawa', key=3)
-
-    left_value = int(left_value)
-    right_value = int(right_value)
+        left_value = st.number_input('Enter left value:', min_value=0, value=1000, step=500, key=1)
+        right_value = st.number_input('Enter right value:', min_value=0, value=20000, step=500, key=2)
+        title_filter = st.text_input('Enter title:', value='Karuizawa', key=3)
 
     price_range = st.slider('Select price range (GBP)', min_value=0, max_value=700000, 
-                            value=(left_value, right_value), step=1000)
+                            value=(int(left_value), int(right_value)), step=1000)
 
     filtered_df = df[
         (df['price_gbp'] >= price_range[0]) & 
@@ -184,7 +176,7 @@ def visualise_price_search():
             "url": st.column_config.LinkColumn(
                 "link",
                 help="Click to access the whisky page on hedonism wines",
-                validate="^https://[a-z]+\.streamlit\.app$",
+                validate="^https?://.*$",
                 max_chars=100,
                 display_text="https://(.*?)\.streamlit\.app"
             )

@@ -4,15 +4,14 @@ from datetime import datetime
 import os
 import glob
 import logging
-import warnings
 import time
 from dotenv import load_dotenv
 
 # Load environment variables from .env file
 load_dotenv()
 
-# Suppress all warnings
-warnings.filterwarnings("ignore")
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
 def read_csv_files_in_folder(folder_path):
     # Step 1: Read all files into dataframes
@@ -62,7 +61,7 @@ def read_csv_files_in_folder(folder_path):
                            'Vintage':'vintage'
                            }, inplace=True)
     
-    print ('Dataframes combined successfully.')
+    logger.info("Dataframes combined successfully.")
     return combined_df
 
 #@st.cache_data
@@ -77,7 +76,7 @@ def create_or_replace_tables(df):
         with duckdb.connect(database=db_path) as conn:
             # Drop the existing stocks_table if it exists
             conn.execute("DROP TABLE IF EXISTS stocks_table")
-            print ("Tables dropped successfully.")
+            logger.info("Tables dropped successfully.")
 
             # Create or replace the stocks_table
             chunksize = 1000  # Adjust the chunk size as needed
@@ -106,10 +105,10 @@ def create_or_replace_tables(df):
             df.to_sql('stocks_table', con=conn, index=False, if_exists='append', chunksize=chunksize,method='multi', dtype=dtype)
 
             end_time = time.time()
-            print (f"Main table recreated taking {end_time - start_time} seconds to run.")
+            logger.info("Main table recreated taking %s seconds to run.", end_time - start_time)
 
             conn.execute("DROP VIEW IF EXISTS whisky_stocks_table")
-            print ("whisky_stocks_table view dropped successfully.")
+            logger.info("whisky_stocks_table view dropped successfully.")
             # Create or replace the whisky_stocks_table view
             conn.execute("""CREATE OR REPLACE VIEW whisky_stocks_table AS 
                             SELECT 
@@ -131,7 +130,7 @@ def create_or_replace_tables(df):
                             WHERE type = 'Whisky'""")
             
             conn.execute("DROP VIEW IF EXISTS whisky_stocks_table_today")
-            print ("whisky_stocks_table_today view dropped successfully.")
+            logger.info("whisky_stocks_table_today view dropped successfully.")
             # Create or replace the whisky_stocks_table_today view
             conn.execute("""CREATE OR REPLACE VIEW whisky_stocks_table_today AS 
                             SELECT 
@@ -143,10 +142,10 @@ def create_or_replace_tables(df):
                             FROM whisky_stocks_table 
                             WHERE import_date = CURRENT_DATE()
                             """)
-            print ("Main views recreated.")
+            logger.info("Main views recreated.")
         
-        print("Tables created or replaced successfully.")
+        logger.info("Tables created or replaced successfully.")
     except Exception as e:
-        print(f"Error occurred: {e}")
+        logger.exception("Error occurred: %s", e)
     end_time = time.time()
-    print(f"This function took {end_time - start_time} seconds to run.")
+    logger.info("This function took %s seconds to run.", end_time - start_time)

@@ -54,21 +54,18 @@ def run_streamlit():
 
 def main():
     """Main function to execute the workflow."""
-    if True:
-        process_api_data()
-        df = dp.read_csv_files_in_folder(settings.local_folder)
-        print("Data read successfully.")
+    process_api_data()
+    df = dp.read_csv_files_in_folder(settings.local_folder)
+    print("Data read successfully.")
 
-        dp.create_or_replace_tables(df)
-        print("Data processed successfully.")
+    dp.create_or_replace_tables(df)
+    print("Data processed successfully.")
 
-        process_sales_data()
-        aq.athena_tables_creation()
+    process_sales_data()
+    aq.athena_tables_creation()
 
-        email_discount_alert()
-        run_streamlit()
-    else:
-        print("Database is locked. Attempting to kill the locking process...")
+    email_discount_alert()
+    run_streamlit()
 
 if __name__ == "__main__":
     main()
