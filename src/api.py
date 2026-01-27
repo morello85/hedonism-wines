@@ -4,7 +4,7 @@ from io import StringIO
 from datetime import datetime
 from pathlib import Path
 
-def fetch_data_from_api(url, output_folder: Path):
+def fetch_data_from_api(url, output_folder: Path, timeout: int = 30):
     # Define headers
     headers = {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.3',
@@ -12,7 +12,12 @@ def fetch_data_from_api(url, output_folder: Path):
     }
 
     # Make request with headers
-    response = requests.get(url, headers=headers)
+    try:
+        response = requests.get(url, headers=headers, timeout=timeout)
+        response.raise_for_status()
+    except requests.RequestException as exc:
+        print(f"Failed to fetch data: {exc}")
+        return None
 
     # Check if request was successful
     if response.status_code == 200:
@@ -36,6 +41,5 @@ def fetch_data_from_api(url, output_folder: Path):
         print("File saved successfully.")
         
         return df
-    else:
-        print("Failed to fetch data:", response.status_code)
-        return None
+    print("Failed to fetch data:", response.status_code)
+    return None

@@ -15,6 +15,22 @@ import time
 # Create an Athena client
 athena_client = boto3.client('athena', region_name='eu-west-1')
 
+
+def wait_for_query(query_execution_id, poll_interval=5, timeout_seconds=300):
+    start_time = time.time()
+    terminal_states = {"SUCCEEDED", "FAILED", "CANCELLED"}
+    while True:
+        response = athena_client.get_query_execution(QueryExecutionId=query_execution_id)
+        status = response["QueryExecution"]["Status"]["State"]
+        if status in terminal_states:
+            if status != "SUCCEEDED":
+                reason = response["QueryExecution"]["Status"].get("StateChangeReason", "Unknown")
+                raise RuntimeError(f"Athena query {query_execution_id} {status}: {reason}")
+            return
+        if time.time() - start_time > timeout_seconds:
+            raise TimeoutError(f"Athena query {query_execution_id} timed out.")
+        time.sleep(poll_interval)
+
 def athena_tables_creation():
 
 # Define your SQL statements
@@ -54,26 +70,7 @@ def athena_tables_creation():
             'OutputLocation': 's3://dario-athena-query-results/'  # Specify an S3 location for query results
         }
     )
-
-    # # Wait for the query execution to complete
-    # query_execution_id = response['QueryExecutionId']
-    # # Define the terminal states
-    # terminal_states = ['SUCCEEDED', 'FAILED', 'CANCELLED']
-
-    # while True:
-    #     # Get the query execution status
-    #     response = athena_client.get_query_execution(QueryExecutionId=query_execution_id)
-    #     status = response['QueryExecution']['Status']['State']
-
-    #     # Check if the query execution is in a terminal state
-    #     if status in terminal_states:
-    #         break
-
-    #     # Wait for a few seconds before checking again
-    #     time.sleep(5)
-
-    # # Once the query execution is in a terminal state, continue with your logic
-    # athena_client.get_waiter('query_execution_completed').wait(QueryExecutionId=query_execution_id)
+    wait_for_query(response['QueryExecutionId'])
 
     # Execute second SQL statement
     response = athena_client.start_query_execution(
@@ -85,9 +82,6 @@ def athena_tables_creation():
             'OutputLocation': 's3://dario-athena-query-results/'  # Specify an S3 location for query results
         }
     )
-
-    # Wait for the query execution to complete
-    query_execution_id = response['QueryExecutionId']
-    #athena_client.get_waiter('query_execution_completed').wait(QueryExecutionId=query_execution_id)
+    wait_for_query(response['QueryExecutionId'])
 
     print("Athena tables and views created successfully.")
