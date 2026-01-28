@@ -37,8 +37,9 @@ def clear_s3_prefix(s3_uri):
         raise ValueError(f"Expected s3:// URI, got {s3_uri}")
     bucket, _, prefix = s3_uri[5:].partition("/")
     prefix = prefix.rstrip("/")
+    list_prefix = f"{prefix}/" if prefix else ""
     paginator = s3_client.get_paginator("list_objects_v2")
-    for page in paginator.paginate(Bucket=bucket, Prefix=f"{prefix}/"):
+    for page in paginator.paginate(Bucket=bucket, Prefix=list_prefix):
         objects = [{"Key": obj["Key"]} for obj in page.get("Contents", [])]
         if objects:
             s3_client.delete_objects(Bucket=bucket, Delete={"Objects": objects})
