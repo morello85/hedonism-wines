@@ -12,11 +12,11 @@ def create_or_replace_tables(folder_path, db_path):
 
     try:
         # Establish a connection to the DuckDB database
-        with duckdb.connect(database=db_path) as conn:
+        with duckdb.connect(database=os.fspath(db_path)) as conn:
             # Set parallelism if your system supports it
             conn.execute('PRAGMA threads=4;')  # Adjust number of threads based on your system
 
-            csv_glob = os.path.join(folder_path, "*.csv")
+            csv_glob = os.path.join(os.fspath(folder_path), "*.csv")
             start_time = time.time()
             conn.execute(
                 """
