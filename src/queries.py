@@ -3,23 +3,15 @@ import duckdb
 from datetime import datetime
 from pathlib import Path
 from typing import Optional
-import os
-from dotenv import load_dotenv
 
-# Load environment variables from .env file
-load_dotenv()
+from config import load_settings
 
-# Specify the file path for the DuckDB database
-db_path = os.getenv('DB_PATH')
-if not db_path:
-    raise ValueError(
-        "DB_PATH is required for DuckDB storage. Set it to a secure, "
-        "non-world-writable location (e.g., /var/lib/hedonism-wines/database.duckdb)."
-    )
+settings = load_settings()
+db_path = settings.db_path
 
 def query_discounted_items():
     """Query discounted items in the whisky stocks."""
-    with duckdb.connect(database=db_path, read_only=False) as conn:
+    with duckdb.connect(database=str(db_path), read_only=False) as conn:
         results = conn.execute("""
             WITH current_price AS (
                 SELECT code, price_gbp, import_date, title, url
@@ -52,7 +44,7 @@ def query_discounted_items():
 
 def stocks_and_median_values():
     """Get stock count and median price by import date."""
-    with duckdb.connect(database=db_path, read_only=False) as conn:
+    with duckdb.connect(database=str(db_path), read_only=False) as conn:
         results = conn.execute("""
             SELECT COUNT (*) stock_count,
                    MEDIAN (CAST(price_gbp AS FLOAT)) median_price,
@@ -70,7 +62,7 @@ def stocks_and_median_values():
 
 def stocks_and_median_values_by_code():
     """Get stock and median values by code."""
-    with duckdb.connect(database=db_path, read_only=False) as conn:
+    with duckdb.connect(database=str(db_path), read_only=False) as conn:
         results = conn.execute("""
             WITH x AS (
                 SELECT
@@ -97,7 +89,7 @@ def stocks_and_median_values_by_code():
 
 def units_sold(output_folder: Optional[Path] = None):
     """Get the units sold for the current and previous day."""
-    with duckdb.connect(database=db_path, read_only=False) as conn:
+    with duckdb.connect(database=str(db_path), read_only=False) as conn:
         results = conn.execute("""
             WITH todays_items AS (             
                 SELECT code, title, url, price_gbp, availability, import_date 
@@ -147,7 +139,7 @@ def units_sold(output_folder: Optional[Path] = None):
 
 def price_search():
     """Search for prices in the whisky stock table."""
-    with duckdb.connect(database=db_path, read_only=False) as conn:
+    with duckdb.connect(database=str(db_path), read_only=False) as conn:
         results = conn.execute("""
             SELECT 
                 import_date, 

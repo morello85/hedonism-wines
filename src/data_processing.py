@@ -1,75 +1,14 @@
 import duckdb
-import pandas as pd
-from datetime import datetime
 import os
-import glob
 import logging
 import time
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
 
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
-def read_csv_files_in_folder(folder_path):
-    # Step 1: Read all files into dataframes
-    csv_files = glob.glob(f"{folder_path}/*.csv")
-    dataframes = []
-
-    for file in csv_files:
-        df = pd.read_csv(file)
-
-        # Extract the date part of the file name
-        file_name = os.path.basename(file)
-        date_str = '_'.join(file_name.split('_')[-3:]).split('.')[0]
-        date = pd.to_datetime(date_str, format='%Y_%m_%d')
-
-        # Add a new column 'import_date' with the extracted date
-        df['import_date'] = date.strftime('%Y-%m-%d')
-
-        dataframes.append(df)
-
-    # Step 2: Identify all unique columns across all dataframes
-    all_columns = set()
-    for df in dataframes:
-        all_columns.update(df.columns)
-
-    # Step 3: Standardize each dataframe to have all columns
-    standardized_dataframes = []
-    for df in dataframes:
-        for column in all_columns:
-            if column not in df.columns:
-                df[column] = pd.NA
-        standardized_dataframes.append(df[sorted(all_columns)])
-
-    # Step 4: Concatenate all dataframes
-    combined_df = pd.concat(standardized_dataframes, ignore_index=True)
-    combined_df.rename(columns={'Code':'code',
-                           'Title':'title',
-                           'Size':'size',
-                           'Style':'style',
-                           'Country':'country',
-                           'Group':'type',
-                           'Available':'availability',
-                           'Price (GBP)': 'price_gbp',
-                           'ABV': 'abv',
-                           'Link':'url',
-                           'Price (ex-VAT)':'price_ex_vat',
-                           'Price (inc VAT)': 'price_incl_vat',
-                           'Vintage':'vintage'
-                           }, inplace=True)
-    
-    logger.info("Dataframes combined successfully.")
-    return combined_df
-
 #@st.cache_data
-def create_or_replace_tables(folder_path):
+def create_or_replace_tables(folder_path, db_path):
     start_time = time.time()
-
-    # Read the database file path from the environment variable
-    db_path = os.getenv('DB_PATH')
 
     try:
         # Establish a connection to the DuckDB database

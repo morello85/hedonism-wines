@@ -1,28 +1,11 @@
 import altair as alt  # type: ignore
 import streamlit as st
-import matplotlib.pyplot as plt
-import pandas as pd
 import queries
 import re
-import duckdb
-import os
-from dotenv import load_dotenv
-
-# Load environment variables from .env file
-load_dotenv()
-
-# Read the database file path from the environment variable
-db_path = os.getenv('DB_PATH')
-if not db_path:
-    raise ValueError(
-        "DB_PATH is required for DuckDB storage. Set it to a secure, "
-        "non-world-writable location (e.g., /var/lib/hedonism-wines/database.duckdb)."
-    )
 
 def visualise_discounted_items():
     """Visualize discounted items."""
-    with duckdb.connect(database=db_path, read_only=False) as conn:
-        df = queries.query_discounted_items()
+    df = queries.query_discounted_items()
 
     st.title('Discounts')
 
@@ -72,8 +55,7 @@ def visualise_discounted_items():
 
 def visualise_stocks_and_median_values():
     """Visualize stock count and median price."""
-    with duckdb.connect(database=db_path, read_only=False) as conn:
-        df = queries.stocks_and_median_values()
+    df = queries.stocks_and_median_values()
 
     st.title('Stock and Median Price Check')
 
@@ -93,8 +75,7 @@ def visualise_stocks_and_median_values():
 
 def visualise_stocks_and_median_values_by_code():
     """Visualize median price by code."""
-    with duckdb.connect(database=db_path, read_only=False) as conn:
-        df = queries.stocks_and_median_values_by_code()
+    df = queries.stocks_and_median_values_by_code()
 
     st.title('Median Price Check By Code')
 
@@ -125,8 +106,7 @@ def visualise_stocks_and_median_values_by_code():
 
 def visualise_units_sold():
     """Visualize units sold."""
-    with duckdb.connect(database=db_path, read_only=False) as conn:
-        df = queries.units_sold()
+    df = queries.units_sold()
 
     st.title('Previous Day Units Sold')
     st.data_editor(
@@ -154,8 +134,7 @@ def visualise_units_sold():
 
 def visualise_price_search():
     """Visualize price search."""
-    with duckdb.connect(database=db_path, read_only=False) as conn:
-        df = queries.price_search()
+    df = queries.price_search()
 
     st.title('Price Search')
 
