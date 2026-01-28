@@ -10,6 +10,8 @@ def upload_files_to_s3(local_folder, bucket_name):
 
     for file_name in files:
         local_file_path = os.path.join(local_folder, file_name)
+        if not os.path.isfile(local_file_path):
+            continue
         s3_object_key = file_name  # Assuming object key is same as file name
 
         # Check if the file already exists in the bucket
