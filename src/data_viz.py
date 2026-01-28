@@ -155,9 +155,9 @@ def visualise_price_search():
 
     st.title('Price Search')
 
-        left_value = st.number_input('Enter left value:', min_value=0, value=1000, step=500, key=1)
-        right_value = st.number_input('Enter right value:', min_value=0, value=20000, step=500, key=2)
-        title_filter = st.text_input('Enter title:', value='Karuizawa', key=3)
+    left_value = st.number_input('Enter left value:', min_value=0, value=1000, step=500, key=1)
+    right_value = st.number_input('Enter right value:', min_value=0, value=20000, step=500, key=2)
+    title_filter = st.text_input('Enter title:', value='Karuizawa', key=3)
 
     price_range = st.slider('Select price range (GBP)', min_value=0, max_value=700000, 
                             value=(int(left_value), int(right_value)), step=1000)
