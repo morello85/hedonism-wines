@@ -14,6 +14,7 @@ import time
 
 # Create an Athena client
 athena_client = boto3.client('athena', region_name='eu-west-1')
+s3_client = boto3.client('s3', region_name='eu-west-1')
 
 
 def wait_for_query(query_execution_id, poll_interval=5, timeout_seconds=300):
@@ -30,6 +31,17 @@ def wait_for_query(query_execution_id, poll_interval=5, timeout_seconds=300):
         if time.time() - start_time > timeout_seconds:
             raise TimeoutError(f"Athena query {query_execution_id} timed out.")
         time.sleep(poll_interval)
+
+def clear_s3_prefix(s3_uri):
+    if not s3_uri.startswith("s3://"):
+        raise ValueError(f"Expected s3:// URI, got {s3_uri}")
+    bucket, _, prefix = s3_uri[5:].partition("/")
+    prefix = prefix.rstrip("/")
+    paginator = s3_client.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket=bucket, Prefix=f"{prefix}/"):
+        objects = [{"Key": obj["Key"]} for obj in page.get("Contents", [])]
+        if objects:
+            s3_client.delete_objects(Bucket=bucket, Delete={"Objects": objects})
 
 def athena_tables_creation():
 
@@ -51,11 +63,12 @@ def athena_tables_creation():
     TBLPROPERTIES ('skip.header.line.count'='1')
     """
 
-    create_parquet_table_sql = """
+    parquet_location = "s3://hedonism-wines-api-parquet/"
+    create_parquet_table_sql = f"""
     CREATE TABLE IF NOT EXISTS stocks_table_parquet
     WITH (
     format = 'PARQUET',
-    external_location = 's3://hedonism-wines-api-parquet/'
+    external_location = '{parquet_location}'
     ) AS
     SELECT * FROM hedonism_wines.stocks_table
     """
@@ -71,6 +84,8 @@ def athena_tables_creation():
         }
     )
     wait_for_query(response['QueryExecutionId'])
+
+    clear_s3_prefix(parquet_location)
 
     # Execute second SQL statement
     response = athena_client.start_query_execution(
