@@ -61,10 +61,7 @@ def main():
     start_time = time.time()
 
     process_api_data()
-    df = dp.read_csv_files_in_folder(settings.local_folder)
-    print("Data read successfully.")
-    
-    dp.create_or_replace_tables(settings.local_folder)
+    dp.create_or_replace_tables(settings.local_folder, settings.db_path)
     print("Data processed successfully.")
 
     process_sales_data()

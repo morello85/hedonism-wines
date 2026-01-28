@@ -1,9 +1,6 @@
-import pandas as pd
 import smtplib
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
-import queries as q
-# import duckdb
 import os
 from dotenv import load_dotenv
 
