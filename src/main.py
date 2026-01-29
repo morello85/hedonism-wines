@@ -10,7 +10,7 @@ import data_processing as dp
 import email_alerting as ea
 import queries as q
 import s3upload as su
-from config import load_settings, missing_env_vars
+from config import load_settings
 
 
 def process_api_data(settings):
@@ -20,8 +20,11 @@ def process_api_data(settings):
     df = api.fetch_data_from_api(url, settings.local_folder)
     if df is not None:
         print("API data fetched successfully.")
-        su.upload_files_to_s3(settings.local_folder, settings.api_files_bucket_name)
-        print("API stocks data uploaded to S3 successfully.")
+        if settings.api_files_bucket_name:
+            su.upload_files_to_s3(settings.local_folder, settings.api_files_bucket_name)
+            print("API stocks data uploaded to S3 successfully.")
+        else:
+            print("Skipping API S3 upload because API_FILES_BUCKET_NAME is missing.")
     else:
         print("Failed to fetch data from API.")
     return df
@@ -30,8 +33,11 @@ def process_api_data(settings):
 def process_sales_data(settings):
     """Process sales data and upload to S3."""
     q.units_sold(settings.local_sales_folder)
-    su.upload_files_to_s3(settings.local_sales_folder, settings.sales_files_bucket_name)
-    print("Sales data created and loaded to S3 successfully.")
+    if settings.sales_files_bucket_name:
+        su.upload_files_to_s3(settings.local_sales_folder, settings.sales_files_bucket_name)
+        print("Sales data created and loaded to S3 successfully.")
+    else:
+        print("Skipping sales S3 upload because SALES_FILES_BUCKET_NAME is missing.")
 
 
 def email_discount_alert():
@@ -68,14 +74,8 @@ def write_last_refresh(timestamp_path: Path) -> None:
 
 def main():
     """Main function to execute the workflow."""
-    settings = load_settings(required=False)
-    if settings is None:
-        missing_list = ", ".join(missing_env_vars())
-        print(
-            "Skipping pipeline because required environment variables are missing: "
-            f"{missing_list}"
-        )
-        return
+    allow_missing_s3 = os.getenv("SKIP_S3_UPLOADS", "").lower() in {"1", "true", "yes"}
+    settings = load_settings(required=True, allow_missing_s3=allow_missing_s3)
     start_time = time.time()
 
     process_api_data(settings)
@@ -83,7 +83,10 @@ def main():
     print("Data processed successfully.")
 
     process_sales_data(settings)
-    aq.athena_tables_creation()
+    if settings.api_files_bucket_name:
+        aq.athena_tables_creation()
+    else:
+        print("Skipping Athena table creation because API_FILES_BUCKET_NAME is missing.")
 
     email_discount_alert()
     end_time = time.time()
