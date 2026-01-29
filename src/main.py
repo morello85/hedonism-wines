@@ -86,10 +86,10 @@ def main():
     aq.athena_tables_creation()
 
     email_discount_alert()
-    run_streamlit()
     end_time = time.time()
     print(f"Full pipeline completed in {end_time - start_time:.2f} seconds.")
     write_last_refresh(Path(__file__).resolve().parent / "last_refresh.txt")
+    run_streamlit()
 
 
 if __name__ == "__main__":
