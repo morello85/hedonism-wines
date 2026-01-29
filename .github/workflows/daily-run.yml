@@ -17,6 +17,7 @@ jobs:
       DB_PATH: ${{ github.workspace }}/data/hedonism.duckdb
       API_FILES_BUCKET_NAME: ${{ vars.API_FILES_BUCKET_NAME }}
       SALES_FILES_BUCKET_NAME: ${{ vars.SALES_FILES_BUCKET_NAME }}
+      EMAIL_PASSWORD: ${{ secrets.EMAIL_PASSWORD }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -46,6 +47,9 @@ jobs:
           fi
           if [ -z "${SALES_FILES_BUCKET_NAME}" ]; then
             missing+=("SALES_FILES_BUCKET_NAME")
+          fi
+          if [ -z "${EMAIL_PASSWORD}" ]; then
+            missing+=("EMAIL_PASSWORD")
           fi
           if [ ${#missing[@]} -ne 0 ]; then
             echo "Missing required secrets: ${missing[*]}"
