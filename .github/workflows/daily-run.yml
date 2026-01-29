@@ -30,5 +30,19 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
+      - name: Validate required S3 secrets
+        run: |
+          missing=()
+          if [ -z "${API_FILES_BUCKET_NAME}" ]; then
+            missing+=("API_FILES_BUCKET_NAME")
+          fi
+          if [ -z "${SALES_FILES_BUCKET_NAME}" ]; then
+            missing+=("SALES_FILES_BUCKET_NAME")
+          fi
+          if [ ${#missing[@]} -ne 0 ]; then
+            echo "Missing required secrets: ${missing[*]}"
+            exit 1
+          fi
+
       - name: Run daily pipeline
         run: python src/main.py

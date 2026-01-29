@@ -23,21 +23,28 @@ def _require_env(name: str) -> str:
     return value
 
 
-def missing_env_vars() -> list[str]:
-    return [name for name in REQUIRED_ENV_VARS if not os.getenv(name)]
+def missing_env_vars(*, allow_missing_s3: bool = False) -> list[str]:
+    required = set(REQUIRED_ENV_VARS)
+    if allow_missing_s3:
+        required -= {"API_FILES_BUCKET_NAME", "SALES_FILES_BUCKET_NAME"}
+    return [name for name in required if not os.getenv(name)]
 
 
 @dataclass(frozen=True)
 class Settings:
     local_folder: Path
     local_sales_folder: Path
-    api_files_bucket_name: str
-    sales_files_bucket_name: str
+    api_files_bucket_name: Optional[str]
+    sales_files_bucket_name: Optional[str]
     db_path: Path
 
 
-def load_settings(required: bool = True) -> Optional[Settings]:
-    missing = missing_env_vars()
+def load_settings(
+    required: bool = True,
+    *,
+    allow_missing_s3: bool = False,
+) -> Optional[Settings]:
+    missing = missing_env_vars(allow_missing_s3=allow_missing_s3)
     if missing:
         if required:
             missing_list = ", ".join(missing)
@@ -46,7 +53,7 @@ def load_settings(required: bool = True) -> Optional[Settings]:
     return Settings(
         local_folder=Path(_require_env("LOCAL_FOLDER")),
         local_sales_folder=Path(_require_env("LOCAL_SALES_FOLDER")),
-        api_files_bucket_name=_require_env("API_FILES_BUCKET_NAME"),
-        sales_files_bucket_name=_require_env("SALES_FILES_BUCKET_NAME"),
+        api_files_bucket_name=os.getenv("API_FILES_BUCKET_NAME"),
+        sales_files_bucket_name=os.getenv("SALES_FILES_BUCKET_NAME"),
         db_path=Path(_require_env("DB_PATH")),
     )

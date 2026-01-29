@@ -3,6 +3,9 @@ import boto3
 from botocore.exceptions import ClientError
 
 def upload_files_to_s3(local_folder, bucket_name):
+    if not bucket_name:
+        print(f"Skipping S3 upload for '{local_folder}' because bucket name is missing.")
+        return
     s3 = boto3.client('s3')
 
     # List all files in the local folder
