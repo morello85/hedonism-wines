@@ -11,6 +11,11 @@ jobs:
     env:
       PYTHONPATH: src
       SKIP_STREAMLIT: "true"
+      LOCAL_FOLDER: ${{ github.workspace }}/data/raw
+      LOCAL_SALES_FOLDER: ${{ github.workspace }}/data/sales
+      DB_PATH: ${{ github.workspace }}/data/hedonism.duckdb
+      API_FILES_BUCKET_NAME: ${{ secrets.API_FILES_BUCKET_NAME }}
+      SALES_FILES_BUCKET_NAME: ${{ secrets.SALES_FILES_BUCKET_NAME }}
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
