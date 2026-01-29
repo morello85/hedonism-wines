@@ -18,17 +18,17 @@ def create_or_replace_tables(folder_path, db_path):
 
             csv_glob = os.path.join(os.fspath(folder_path), "*.csv")
             start_time = time.time()
+            escaped_csv_glob = csv_glob.replace("'", "''")
             conn.execute(
-                """
+                f"""
                 CREATE OR REPLACE TEMP VIEW raw AS
                 SELECT *
                 FROM read_csv_auto(
-                    ?,
+                    '{escaped_csv_glob}',
                     union_by_name=true,
                     filename=true
                 )
-                """,
-                [csv_glob],
+                """
             )
 
             columns = {
