@@ -20,36 +20,58 @@ def create_or_replace_tables(folder_path, db_path):
             start_time = time.time()
             conn.execute(
                 """
-                CREATE OR REPLACE TABLE stocks_table AS
-                WITH raw AS (
-                    SELECT *
-                    FROM read_csv_auto(
-                        ?,
-                        union_by_name=true,
-                        filename=true
-                    )
+                CREATE OR REPLACE TEMP VIEW raw AS
+                SELECT *
+                FROM read_csv_auto(
+                    ?,
+                    union_by_name=true,
+                    filename=true
                 )
+                """,
+                [csv_glob],
+            )
+
+            columns = {
+                row[1] for row in conn.execute("PRAGMA table_info('raw')").fetchall()
+            }
+
+            def column_expr(possible_names, cast_type=None):
+                expressions = []
+                for name in possible_names:
+                    if name in columns:
+                        expr = f'raw."{name}"'
+                        if cast_type:
+                            expr = f"TRY_CAST({expr} AS {cast_type})"
+                        expressions.append(expr)
+                if not expressions:
+                    return f"CAST(NULL AS {cast_type})" if cast_type else "NULL"
+                if len(expressions) == 1:
+                    return expressions[0]
+                return f"COALESCE({', '.join(expressions)})"
+
+            conn.execute(
+                f"""
+                CREATE OR REPLACE TABLE stocks_table AS
                 SELECT
-                    TRY_CAST("ABV" AS DOUBLE) AS abv,
-                    "Available" AS availability,
-                    "Code" AS code,
-                    "Country" AS country,
-                    "Group" AS type,
-                    "Link" AS url,
-                    TRY_CAST("Price (GBP)" AS DOUBLE) AS price_gbp,
-                    TRY_CAST("Price (ex-VAT)" AS DOUBLE) AS price_ex_vat,
-                    TRY_CAST("Price (inc VAT)" AS DOUBLE) AS price_incl_vat,
-                    "Size" AS size,
-                    "Style" AS style,
-                    "Title" AS title,
-                    "Vintage" AS vintage,
+                    {column_expr(['ABV', 'abv'], 'DOUBLE')} AS abv,
+                    {column_expr(['Available', 'available', 'availability'])} AS availability,
+                    {column_expr(['Code', 'code'])} AS code,
+                    {column_expr(['Country', 'country'])} AS country,
+                    {column_expr(['Group', 'type'])} AS type,
+                    {column_expr(['Link', 'url'])} AS url,
+                    {column_expr(['Price (GBP)', 'price_gbp'], 'DOUBLE')} AS price_gbp,
+                    {column_expr(['Price (ex-VAT)', 'price_ex_vat'], 'DOUBLE')} AS price_ex_vat,
+                    {column_expr(['Price (inc VAT)', 'price_incl_vat'], 'DOUBLE')} AS price_incl_vat,
+                    {column_expr(['Size', 'size'])} AS size,
+                    {column_expr(['Style', 'style'])} AS style,
+                    {column_expr(['Title', 'title'])} AS title,
+                    {column_expr(['Vintage', 'vintage'])} AS vintage,
                     TRY_STRPTIME(
-                        regexp_extract(filename, '(\\d{4}_\\d{2}_\\d{2})', 1),
+                        regexp_extract(filename, '(\\d{{4}}_\\d{{2}}_\\d{{2}})', 1),
                         '%Y_%m_%d'
                     )::DATE AS import_date
                 FROM raw
-                """,
-                [csv_glob],
+                """
             )
 
             end_time = time.time()
