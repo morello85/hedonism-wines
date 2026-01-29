@@ -1,9 +1,19 @@
 from dataclasses import dataclass
-from pathlib import Path
 import os
+from pathlib import Path
+from typing import Optional
+
 from dotenv import load_dotenv
 
 load_dotenv()
+
+REQUIRED_ENV_VARS = (
+    "LOCAL_FOLDER",
+    "LOCAL_SALES_FOLDER",
+    "API_FILES_BUCKET_NAME",
+    "SALES_FILES_BUCKET_NAME",
+    "DB_PATH",
+)
 
 
 def _require_env(name: str) -> str:
@@ -11,6 +21,10 @@ def _require_env(name: str) -> str:
     if not value:
         raise ValueError(f"Missing required environment variable: {name}")
     return value
+
+
+def missing_env_vars() -> list[str]:
+    return [name for name in REQUIRED_ENV_VARS if not os.getenv(name)]
 
 
 @dataclass(frozen=True)
@@ -22,7 +36,13 @@ class Settings:
     db_path: Path
 
 
-def load_settings() -> Settings:
+def load_settings(required: bool = True) -> Optional[Settings]:
+    missing = missing_env_vars()
+    if missing:
+        if required:
+            missing_list = ", ".join(missing)
+            raise ValueError(f"Missing required environment variables: {missing_list}")
+        return None
     return Settings(
         local_folder=Path(_require_env("LOCAL_FOLDER")),
         local_sales_folder=Path(_require_env("LOCAL_SALES_FOLDER")),

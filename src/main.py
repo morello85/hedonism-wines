@@ -1,17 +1,17 @@
-import api
-import data_processing as dp
-import s3upload as su
-import email_alerting as ea
-import athena_queries as aq
-import queries as q
-from config import load_settings
 import os
-import time
 import subprocess  # Import subprocess module to run shell commands
+import time
 
-settings = load_settings()
+import api
+import athena_queries as aq
+import data_processing as dp
+import email_alerting as ea
+import queries as q
+import s3upload as su
+from config import load_settings, missing_env_vars
 
-def process_api_data():
+
+def process_api_data(settings):
     """Fetch data from the API and upload it to S3."""
     url = 'https://hedonism.co.uk/full-stock-list.csv'
     #url = 'https://hedonism.co.uk/sites/default/files/full-stock-list.csv'
@@ -25,7 +25,7 @@ def process_api_data():
     return df
 
 
-def process_sales_data():
+def process_sales_data(settings):
     """Process sales data and upload to S3."""
     q.units_sold(settings.local_sales_folder)
     su.upload_files_to_s3(settings.local_sales_folder, settings.sales_files_bucket_name)
@@ -58,13 +58,21 @@ def run_streamlit():
 
 def main():
     """Main function to execute the workflow."""
+    settings = load_settings(required=False)
+    if settings is None:
+        missing_list = ", ".join(missing_env_vars())
+        print(
+            "Skipping pipeline because required environment variables are missing: "
+            f"{missing_list}"
+        )
+        return
     start_time = time.time()
 
-    process_api_data()
+    process_api_data(settings)
     dp.create_or_replace_tables(settings.local_folder, settings.db_path)
     print("Data processed successfully.")
 
-    process_sales_data()
+    process_sales_data(settings)
     aq.athena_tables_creation()
 
     email_discount_alert()
