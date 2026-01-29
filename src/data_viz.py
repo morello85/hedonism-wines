@@ -1,12 +1,27 @@
+from pathlib import Path
+import re
+
 import altair as alt  # type: ignore
 import streamlit as st
+
 import queries
-import re
+
+
+def last_refresh_message() -> str:
+    """Get the last refresh message for the dashboard."""
+    timestamp_path = Path(__file__).resolve().parent / "last_refresh.txt"
+    if timestamp_path.exists():
+        timestamp = timestamp_path.read_text(encoding="utf-8").strip()
+        if timestamp:
+            return f"this data was last refreshed on {timestamp}"
+    return "this data was last refreshed on unavailable"
+
 
 def visualise_discounted_items():
     """Visualize discounted items."""
     df = queries.query_discounted_items()
 
+    st.caption(last_refresh_message())
     st.title('Discounts')
 
     if df.empty:

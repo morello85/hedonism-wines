@@ -1,6 +1,8 @@
 import os
 import subprocess  # Import subprocess module to run shell commands
 import time
+from datetime import datetime, timezone
+from pathlib import Path
 
 import api
 import athena_queries as aq
@@ -56,6 +58,14 @@ def run_streamlit():
     subprocess.run(["streamlit", "run", "data_viz.py"])
 
 
+def write_last_refresh(timestamp_path: Path) -> None:
+    """Write the last refresh timestamp to disk."""
+    timestamp_path.write_text(
+        datetime.now(timezone.utc).isoformat(),
+        encoding="utf-8",
+    )
+
+
 def main():
     """Main function to execute the workflow."""
     settings = load_settings(required=False)
@@ -79,6 +89,8 @@ def main():
     run_streamlit()
     end_time = time.time()
     print(f"Full pipeline completed in {end_time - start_time:.2f} seconds.")
+    write_last_refresh(Path(__file__).resolve().parent / "last_refresh.txt")
+
 
 if __name__ == "__main__":
     main()
