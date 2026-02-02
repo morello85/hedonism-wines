@@ -98,6 +98,10 @@ def athena_tables_creation():
     FROM hedonism_wines.stocks_table_raw
     """
 
+    drop_parquet_table_sql = """
+    DROP TABLE IF EXISTS stocks_table_parquet
+    """
+
     create_stocks_view_sql = """
     CREATE OR REPLACE VIEW stocks_table AS
     SELECT
@@ -154,6 +158,17 @@ def athena_tables_creation():
     # Execute SQL statements
     response = athena_client.start_query_execution(
         QueryString=create_external_table_sql,
+        QueryExecutionContext={
+            'Database': 'hedonism_wines'  # Specify your Athena database
+        },
+        ResultConfiguration={
+            'OutputLocation': 's3://dario-athena-query-results/'  # Specify an S3 location for query results
+        }
+    )
+    wait_for_query(response['QueryExecutionId'])
+
+    response = athena_client.start_query_execution(
+        QueryString=drop_parquet_table_sql,
         QueryExecutionContext={
             'Database': 'hedonism_wines'  # Specify your Athena database
         },
