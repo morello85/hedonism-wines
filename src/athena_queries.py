@@ -75,7 +75,7 @@ def athena_tables_creation():
     abv VARCHAR,
     style VARCHAR,
     country VARCHAR,
-    "group" VARCHAR,
+    `group` VARCHAR,
     available VARCHAR,
     price_incl_vat VARCHAR,
     price_ex_vat VARCHAR,
@@ -107,7 +107,7 @@ def athena_tables_creation():
             abv,
             style,
             country,
-            "group" AS group_value,
+            `group` AS group_value,
             available,
             price_incl_vat,
             price_ex_vat,
@@ -117,7 +117,7 @@ def athena_tables_creation():
                     AND price_incl_vat IS NULL
                     AND price_ex_vat IS NULL
                     AND link IS NULL
-                    AND TRY_CAST("group" AS DOUBLE) IS NOT NULL
+                    AND TRY_CAST(`group` AS DOUBLE) IS NOT NULL
                 THEN true
                 ELSE false
             END AS is_legacy_schema
