@@ -94,6 +94,7 @@
 #     )
 #     """
 
+<<<<<<< HEAD
 #     parquet_location = "s3://hedonism-wines-api-parquet/"
 #     create_parquet_table_sql = f"""
 #     CREATE TABLE IF NOT EXISTS stocks_table_parquet
@@ -143,6 +144,58 @@
 #         DATE_PARSE(regexp_extract("$path", '(\\d{{4}}_\\d{{2}}_\\d{{2}})', 1), '%Y_%m_%d') AS import_date
 #     FROM raw
 #     """
+=======
+    parquet_location = "s3://hedonism-wines-api-parquet/"
+    create_parquet_table_sql = f"""
+    CREATE TABLE IF NOT EXISTS stocks_table_parquet
+    WITH (
+    format = 'PARQUET',
+    external_location = '{parquet_location}'
+    ) AS
+    WITH raw AS (
+        SELECT
+            code,
+            title,
+            vintage,
+            size,
+            abv,
+            style,
+            country,
+            group_name AS group_value,
+            available,
+            price_incl_vat,
+            price_ex_vat,
+            link,
+            "$path" AS source_path,
+            CASE
+                WHEN available IS NULL
+                    AND price_incl_vat IS NULL
+                    AND price_ex_vat IS NULL
+                    AND link IS NULL
+                    AND TRY_CAST(group_name AS DOUBLE) IS NOT NULL
+                THEN true
+                ELSE false
+            END AS is_legacy_schema
+        FROM hedonism_wines.stocks_table_raw
+    )
+    SELECT
+        TRY_CAST(CASE WHEN is_legacy_schema THEN NULL ELSE abv END AS DOUBLE) AS abv,
+        CASE WHEN is_legacy_schema THEN country ELSE available END AS availability,
+        code,
+        CASE WHEN is_legacy_schema THEN abv ELSE country END AS country,
+        CASE WHEN is_legacy_schema THEN style ELSE group_value END AS type,
+        CASE WHEN is_legacy_schema THEN NULL ELSE link END AS url,
+        TRY_CAST(CASE WHEN is_legacy_schema THEN group_value ELSE NULL END AS DOUBLE) AS price_gbp,
+        TRY_CAST(CASE WHEN is_legacy_schema THEN NULL ELSE price_ex_vat END AS DOUBLE) AS price_ex_vat,
+        TRY_CAST(CASE WHEN is_legacy_schema THEN NULL ELSE price_incl_vat END AS DOUBLE) AS price_incl_vat,
+        CASE WHEN is_legacy_schema THEN vintage ELSE size END AS size,
+        CASE WHEN is_legacy_schema THEN size ELSE style END AS style,
+        title,
+        CASE WHEN is_legacy_schema THEN NULL ELSE vintage END AS vintage,
+        DATE_PARSE(regexp_extract(source_path, '(\\d{{4}}_\\d{{2}}_\\d{{2}})', 1), '%Y_%m_%d') AS import_date
+    FROM raw
+    """
+>>>>>>> d84f6b5194671566336222ae5a89d78e3dfe5cd4
 
 #     drop_parquet_table_sql = """
 #     DROP TABLE IF EXISTS stocks_table_parquet
