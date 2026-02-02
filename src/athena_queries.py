@@ -115,6 +115,7 @@ def athena_tables_creation():
             price_incl_vat,
             price_ex_vat,
             link,
+            "$path" AS source_path,
             CASE
                 WHEN available IS NULL
                     AND price_incl_vat IS NULL
@@ -140,7 +141,7 @@ def athena_tables_creation():
         CASE WHEN is_legacy_schema THEN size ELSE style END AS style,
         title,
         CASE WHEN is_legacy_schema THEN NULL ELSE vintage END AS vintage,
-        DATE_PARSE(regexp_extract("$path", '(\\d{{4}}_\\d{{2}}_\\d{{2}})', 1), '%Y_%m_%d') AS import_date
+        DATE_PARSE(regexp_extract(source_path, '(\\d{{4}}_\\d{{2}}_\\d{{2}})', 1), '%Y_%m_%d') AS import_date
     FROM raw
     """
 
