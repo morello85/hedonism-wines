@@ -67,7 +67,7 @@ def athena_tables_creation():
     DROP TABLE IF EXISTS stocks_table_raw
     """
     create_external_table_sql = """
-    CREATE TABLE IF NOT EXISTS stocks_table_raw (
+    CREATE EXTERNAL TABLE IF NOT EXISTS stocks_table_raw (
     code VARCHAR,
     title VARCHAR,
     vintage VARCHAR,
@@ -81,13 +81,16 @@ def athena_tables_creation():
     price_ex_vat VARCHAR,
     link VARCHAR
     )
-    WITH (
-      format = 'CSV',
-      external_location = 's3://hedonism-wines-api-files/',
-      skip_header_line_count = 1,
-      field_delimiter = ',',
-      quote_character = '"',
-      escape_character = '\\\\'
+    ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+    WITH SERDEPROPERTIES (
+      'separatorChar' = ',',
+      'quoteChar' = '"',
+      'escapeChar' = '\\\\'
+    )
+    STORED AS TEXTFILE
+    LOCATION 's3://hedonism-wines-api-files/'
+    TBLPROPERTIES (
+      'skip.header.line.count' = '1'
     )
     """
 
