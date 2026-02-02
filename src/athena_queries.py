@@ -47,6 +47,9 @@ def clear_s3_prefix(s3_uri):
 def athena_tables_creation():
 
 # Define your SQL statements
+    drop_raw_table_sql = """
+    DROP TABLE IF EXISTS stocks_table_raw
+    """
     create_external_table_sql = """
     CREATE EXTERNAL TABLE IF NOT EXISTS stocks_table_raw (
     abv STRING,
@@ -96,6 +99,10 @@ def athena_tables_creation():
         vintage,
         DATE_PARSE(regexp_extract("$path", '(\\d{{4}}_\\d{{2}}_\\d{{2}})', 1), '%Y_%m_%d') AS import_date
     FROM hedonism_wines.stocks_table_raw
+    """
+
+    drop_parquet_table_sql = """
+    DROP TABLE IF EXISTS stocks_table_parquet
     """
 
     create_stocks_view_sql = """
@@ -153,7 +160,29 @@ def athena_tables_creation():
 
     # Execute SQL statements
     response = athena_client.start_query_execution(
+        QueryString=drop_raw_table_sql,
+        QueryExecutionContext={
+            'Database': 'hedonism_wines'  # Specify your Athena database
+        },
+        ResultConfiguration={
+            'OutputLocation': 's3://dario-athena-query-results/'  # Specify an S3 location for query results
+        }
+    )
+    wait_for_query(response['QueryExecutionId'])
+
+    response = athena_client.start_query_execution(
         QueryString=create_external_table_sql,
+        QueryExecutionContext={
+            'Database': 'hedonism_wines'  # Specify your Athena database
+        },
+        ResultConfiguration={
+            'OutputLocation': 's3://dario-athena-query-results/'  # Specify an S3 location for query results
+        }
+    )
+    wait_for_query(response['QueryExecutionId'])
+
+    response = athena_client.start_query_execution(
+        QueryString=drop_parquet_table_sql,
         QueryExecutionContext={
             'Database': 'hedonism_wines'  # Specify your Athena database
         },
