@@ -68,18 +68,18 @@ def athena_tables_creation():
     """
     create_external_table_sql = """
     CREATE EXTERNAL TABLE IF NOT EXISTS stocks_table_raw (
-    code VARCHAR,
-    title VARCHAR,
-    vintage VARCHAR,
-    size VARCHAR,
-    abv VARCHAR,
-    style VARCHAR,
-    country VARCHAR,
-    group_name VARCHAR,
-    available VARCHAR,
-    price_incl_vat VARCHAR,
-    price_ex_vat VARCHAR,
-    link VARCHAR
+    code STRING,
+    title STRING,
+    vintage STRING,
+    size STRING,
+    abv STRING,
+    style STRING,
+    country STRING,
+    group_name STRING,
+    available STRING,
+    price_incl_vat STRING,
+    price_ex_vat STRING,
+    link STRING
     )
     ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
     WITH SERDEPROPERTIES (
