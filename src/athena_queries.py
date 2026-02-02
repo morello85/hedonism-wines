@@ -48,15 +48,15 @@ def athena_tables_creation():
 
 # Define your SQL statements
     drop_today_view_sql = """
-    DROP VIEW IF EXISTS whisky_stocks_table_today
+    DROP VIEW IF EXISTS whisky_stocks_view_today
     """
 
     drop_whisky_view_sql = """
-    DROP VIEW IF EXISTS whisky_stocks_table
+    DROP VIEW IF EXISTS whisky_stocks_view
     """
 
     drop_stocks_view_sql = """
-    DROP VIEW IF EXISTS stocks_table
+    DROP VIEW IF EXISTS stocks_view
     """
 
     drop_stocks_table_sql = """
@@ -68,19 +68,18 @@ def athena_tables_creation():
     """
     create_external_table_sql = """
     CREATE EXTERNAL TABLE IF NOT EXISTS stocks_table_raw (
-    abv STRING,
-    availability STRING,
     code STRING,
-    country STRING,
-    type STRING,
-    url STRING,
-    price_gbp STRING,
-    price_ex_vat STRING,
-    price_incl_vat STRING,
-    size STRING,
-    style STRING,
     title STRING,
-    vintage STRING
+    vintage STRING,
+    size STRING,
+    abv STRING,
+    style STRING,
+    country STRING,
+    "group" STRING,
+    available STRING,
+    price_incl_vat STRING,
+    price_ex_vat STRING,
+    link STRING
     )
     ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
     WITH SERDEPROPERTIES (
@@ -99,22 +98,47 @@ def athena_tables_creation():
     format = 'PARQUET',
     external_location = '{parquet_location}'
     ) AS
+    WITH raw AS (
+        SELECT
+            code,
+            title,
+            vintage,
+            size,
+            abv,
+            style,
+            country,
+            "group" AS group_value,
+            available,
+            price_incl_vat,
+            price_ex_vat,
+            link,
+            CASE
+                WHEN available IS NULL
+                    AND price_incl_vat IS NULL
+                    AND price_ex_vat IS NULL
+                    AND link IS NULL
+                    AND TRY_CAST("group" AS DOUBLE) IS NOT NULL
+                THEN true
+                ELSE false
+            END AS is_legacy_schema
+        FROM hedonism_wines.stocks_table_raw
+    )
     SELECT
-        TRY_CAST(abv AS DOUBLE) AS abv,
-        availability,
+        TRY_CAST(CASE WHEN is_legacy_schema THEN NULL ELSE abv END AS DOUBLE) AS abv,
+        CASE WHEN is_legacy_schema THEN country ELSE available END AS availability,
         code,
-        country,
-        type,
-        url,
-        TRY_CAST(price_gbp AS DOUBLE) AS price_gbp,
-        TRY_CAST(price_ex_vat AS DOUBLE) AS price_ex_vat,
-        TRY_CAST(price_incl_vat AS DOUBLE) AS price_incl_vat,
-        size,
-        style,
+        CASE WHEN is_legacy_schema THEN abv ELSE country END AS country,
+        CASE WHEN is_legacy_schema THEN style ELSE group_value END AS type,
+        CASE WHEN is_legacy_schema THEN NULL ELSE link END AS url,
+        TRY_CAST(CASE WHEN is_legacy_schema THEN group_value ELSE NULL END AS DOUBLE) AS price_gbp,
+        TRY_CAST(CASE WHEN is_legacy_schema THEN NULL ELSE price_ex_vat END AS DOUBLE) AS price_ex_vat,
+        TRY_CAST(CASE WHEN is_legacy_schema THEN NULL ELSE price_incl_vat END AS DOUBLE) AS price_incl_vat,
+        CASE WHEN is_legacy_schema THEN vintage ELSE size END AS size,
+        CASE WHEN is_legacy_schema THEN size ELSE style END AS style,
         title,
-        vintage,
+        CASE WHEN is_legacy_schema THEN NULL ELSE vintage END AS vintage,
         DATE_PARSE(regexp_extract("$path", '(\\d{{4}}_\\d{{2}}_\\d{{2}})', 1), '%Y_%m_%d') AS import_date
-    FROM hedonism_wines.stocks_table_raw
+    FROM raw
     """
 
     drop_parquet_table_sql = """
@@ -122,7 +146,7 @@ def athena_tables_creation():
     """
 
     create_stocks_view_sql = """
-    CREATE VIEW stocks_table AS
+    CREATE VIEW stocks_view AS
     SELECT
         abv,
         availability,
@@ -142,7 +166,7 @@ def athena_tables_creation():
     """
 
     create_whisky_view_sql = """
-    CREATE VIEW whisky_stocks_table AS
+    CREATE VIEW whisky_stocks_view AS
     SELECT
         abv,
         availability,
@@ -163,14 +187,14 @@ def athena_tables_creation():
     """
 
     create_today_view_sql = """
-    CREATE VIEW whisky_stocks_table_today AS
+    CREATE VIEW whisky_stocks_view_today AS
     SELECT
         import_date,
         code,
         title,
         price_gbp,
         url
-    FROM whisky_stocks_table
+    FROM whisky_stocks_view
     WHERE import_date = CURRENT_DATE
     """
 
