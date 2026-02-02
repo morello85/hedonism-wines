@@ -47,6 +47,18 @@ def clear_s3_prefix(s3_uri):
 def athena_tables_creation():
 
 # Define your SQL statements
+    drop_today_view_sql = """
+    DROP VIEW IF EXISTS whisky_stocks_table_today
+    """
+
+    drop_whisky_view_sql = """
+    DROP VIEW IF EXISTS whisky_stocks_table
+    """
+
+    drop_stocks_view_sql = """
+    DROP VIEW IF EXISTS stocks_table
+    """
+
     drop_raw_table_sql = """
     DROP TABLE IF EXISTS stocks_table_raw
     """
@@ -159,6 +171,39 @@ def athena_tables_creation():
     """
 
     # Execute SQL statements
+    response = athena_client.start_query_execution(
+        QueryString=drop_today_view_sql,
+        QueryExecutionContext={
+            'Database': 'hedonism_wines'
+        },
+        ResultConfiguration={
+            'OutputLocation': 's3://dario-athena-query-results/'
+        }
+    )
+    wait_for_query(response['QueryExecutionId'])
+
+    response = athena_client.start_query_execution(
+        QueryString=drop_whisky_view_sql,
+        QueryExecutionContext={
+            'Database': 'hedonism_wines'
+        },
+        ResultConfiguration={
+            'OutputLocation': 's3://dario-athena-query-results/'
+        }
+    )
+    wait_for_query(response['QueryExecutionId'])
+
+    response = athena_client.start_query_execution(
+        QueryString=drop_stocks_view_sql,
+        QueryExecutionContext={
+            'Database': 'hedonism_wines'
+        },
+        ResultConfiguration={
+            'OutputLocation': 's3://dario-athena-query-results/'
+        }
+    )
+    wait_for_query(response['QueryExecutionId'])
+
     response = athena_client.start_query_execution(
         QueryString=drop_raw_table_sql,
         QueryExecutionContext={
