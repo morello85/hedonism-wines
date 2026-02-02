@@ -113,19 +113,16 @@ def units_sold(output_folder: Optional[Path] = None):
             FROM 
             (
                 SELECT 
-                CAST (y.code AS STRING) ||'-'|| CAST (y.availability AS STRING) yesterday_code_availability,
-                CAST (t.code AS STRING) ||'-'|| CAST (t.availability AS STRING) today_code_availability,
                 y.code,
                 y.title,
                 y.url,
                 y.price_gbp,
                 y.availability yesterday_availability,
-                t.availability today_availability
+                COALESCE(t.availability, 0) today_availability
                 FROM yesterdays_items y LEFT OUTER JOIN todays_items t
                 ON y.code = t.code
             ) a
-            WHERE a.today_code_availability <> yesterday_code_availability
-            AND CAST(a.yesterday_availability AS FLOAT) - CAST(a.today_availability AS FLOAT) > 0
+            WHERE CAST(a.yesterday_availability AS FLOAT) - CAST(a.today_availability AS FLOAT) > 0
             ORDER BY price_gbp DESC
         """).fetchdf()
 
