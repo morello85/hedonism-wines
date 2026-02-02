@@ -48,18 +48,27 @@ def athena_tables_creation():
 
 # Define your SQL statements
     create_external_table_sql = """
-    CREATE EXTERNAL TABLE IF NOT EXISTS stocks_table (
-    Code STRING,
-    Title STRING,
-    Size STRING,
-    Style STRING,
-    Country STRING,
-    Group STRING,
-    Available INT,
-    `Price (GBP)` DOUBLE  -- Enclose column name with space in backticks
+    CREATE EXTERNAL TABLE IF NOT EXISTS stocks_table_raw (
+    abv STRING,
+    availability STRING,
+    code STRING,
+    country STRING,
+    type STRING,
+    url STRING,
+    price_gbp STRING,
+    price_ex_vat STRING,
+    price_incl_vat STRING,
+    size STRING,
+    style STRING,
+    title STRING,
+    vintage STRING
     )
-    ROW FORMAT DELIMITED
-    FIELDS TERMINATED BY ','
+    ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+    WITH SERDEPROPERTIES (
+      'separatorChar' = ',',
+      'quoteChar' = '"',
+      'escapeChar' = '\\\\'
+    )
     LOCATION 's3://hedonism-wines-api-files/'
     TBLPROPERTIES ('skip.header.line.count'='1')
     """
@@ -71,7 +80,75 @@ def athena_tables_creation():
     format = 'PARQUET',
     external_location = '{parquet_location}'
     ) AS
-    SELECT * FROM hedonism_wines.stocks_table
+    SELECT
+        TRY_CAST(abv AS DOUBLE) AS abv,
+        availability,
+        code,
+        country,
+        type,
+        url,
+        TRY_CAST(price_gbp AS DOUBLE) AS price_gbp,
+        TRY_CAST(price_ex_vat AS DOUBLE) AS price_ex_vat,
+        TRY_CAST(price_incl_vat AS DOUBLE) AS price_incl_vat,
+        size,
+        style,
+        title,
+        vintage,
+        DATE_PARSE(regexp_extract("$path", '(\\d{{4}}_\\d{{2}}_\\d{{2}})', 1), '%Y_%m_%d') AS import_date
+    FROM hedonism_wines.stocks_table_raw
+    """
+
+    create_stocks_view_sql = """
+    CREATE OR REPLACE VIEW stocks_table AS
+    SELECT
+        abv,
+        availability,
+        code,
+        country,
+        type,
+        url,
+        price_gbp,
+        price_ex_vat,
+        price_incl_vat,
+        size,
+        style,
+        title,
+        vintage,
+        import_date
+    FROM stocks_table_parquet
+    """
+
+    create_whisky_view_sql = """
+    CREATE OR REPLACE VIEW whisky_stocks_table AS
+    SELECT
+        abv,
+        availability,
+        code,
+        country,
+        type,
+        url,
+        COALESCE(price_gbp, price_incl_vat) AS price_gbp,
+        COALESCE(price_ex_vat, 0) AS price_ex_vat,
+        COALESCE(price_incl_vat, 0) AS price_incl_vat,
+        size,
+        style,
+        title,
+        vintage,
+        import_date
+    FROM stocks_table_parquet
+    WHERE type = 'Whisky'
+    """
+
+    create_today_view_sql = """
+    CREATE OR REPLACE VIEW whisky_stocks_table_today AS
+    SELECT
+        import_date,
+        code,
+        title,
+        price_gbp,
+        url
+    FROM whisky_stocks_table
+    WHERE import_date = CURRENT_DATE
     """
 
     # Execute SQL statements
@@ -96,6 +173,39 @@ def athena_tables_creation():
         },
         ResultConfiguration={
             'OutputLocation': 's3://dario-athena-query-results/'  # Specify an S3 location for query results
+        }
+    )
+    wait_for_query(response['QueryExecutionId'])
+
+    response = athena_client.start_query_execution(
+        QueryString=create_stocks_view_sql,
+        QueryExecutionContext={
+            'Database': 'hedonism_wines'
+        },
+        ResultConfiguration={
+            'OutputLocation': 's3://dario-athena-query-results/'
+        }
+    )
+    wait_for_query(response['QueryExecutionId'])
+
+    response = athena_client.start_query_execution(
+        QueryString=create_whisky_view_sql,
+        QueryExecutionContext={
+            'Database': 'hedonism_wines'
+        },
+        ResultConfiguration={
+            'OutputLocation': 's3://dario-athena-query-results/'
+        }
+    )
+    wait_for_query(response['QueryExecutionId'])
+
+    response = athena_client.start_query_execution(
+        QueryString=create_today_view_sql,
+        QueryExecutionContext={
+            'Database': 'hedonism_wines'
+        },
+        ResultConfiguration={
+            'OutputLocation': 's3://dario-athena-query-results/'
         }
     )
     wait_for_query(response['QueryExecutionId'])
