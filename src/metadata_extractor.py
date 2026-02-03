@@ -15,6 +15,25 @@ DEFAULT_HEADERS = {
     "Accept-Language": "en-US,en;q=0.9",
 }
 
+REFERENCE_SCHEMA = {
+    "url": (
+        "https://hedonism.co.uk/product/karuizawa-29-year-old-cask-7802-1984-whisky"
+        "?srsltid=AfmBOoq7PEAwIFLNM2b39lsyMXk8MUdeu5r5ictqzubxODFPnYdHF_J8"
+    ),
+    "hedonism_id": "HED89307",
+    "name": "Karuizawa 29 Year Old Cask 7802 1984",
+    "type": "Japanese Single Malt Whisky",
+    "distillery": "Karuizawa (now closed)",
+    "age": "29 years (distilled in 1984, bottled 2014)",
+    "cask": "Oloroso Sherry Butt (#7802)",
+    "abv": "56.7%",
+    "bottles_produced": 577,
+    "region": "Nagano, Japan",
+    "price_gbp": "£7,850 (discounted from ~£8,500) for a 70 cl bottle",
+    "status": "Very limited stock (only a few bottles left when listed)",
+    "selection": "Part of Hedonism’s Limited Single Cask Collection",
+}
+
 
 def fetch_html(url: str, timeout: int = 30) -> str:
     response = requests.get(url, headers=DEFAULT_HEADERS, timeout=timeout)
@@ -189,11 +208,19 @@ def extract_metadata_table(urls: Iterable[str]) -> pd.DataFrame:
     return pd.DataFrame.from_records(records)
 
 
+def build_schema_example(
+    url: str,
+    reference_schema: Optional[Dict[str, Any]] = None,
+) -> pd.DataFrame:
+    schema = dict(reference_schema or REFERENCE_SCHEMA)
+    metadata = extract_metadata(url)
+    schema["url"] = metadata.get("url") or schema.get("url")
+    schema["hedonism_id"] = metadata.get("hed_id") or schema.get("hedonism_id")
+    schema["name"] = metadata.get("product_name") or schema.get("name")
+    ordered_columns = list(schema.keys())
+    return pd.DataFrame([schema], columns=ordered_columns)
+
+
 if __name__ == "__main__":
-    SAMPLE_URLS = [
-        "https://hedonism.co.uk/product/karuizawa-29-year-old-cask-7802-1984-whisky",
-        "https://hedonism.co.uk/product/arran-19-year-old-private-cask-exclusive-hedonism-wines-2005-whisky",
-        "https://hedonism.co.uk/product/ichiros-malt-hanyu-joker-whisky",
-    ]
-    table = extract_metadata_table(SAMPLE_URLS)
-    print(table.to_markdown(index=False))
+    schema_table = build_schema_example(REFERENCE_SCHEMA["url"])
+    print(schema_table.to_markdown(index=False))
