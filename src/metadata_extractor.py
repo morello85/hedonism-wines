@@ -1,5 +1,6 @@
 import json
 import re
+from pathlib import Path
 from html import unescape
 from typing import Any, Dict, Iterable, List, Optional
 
@@ -223,4 +224,7 @@ def build_schema_example(
 
 if __name__ == "__main__":
     schema_table = build_schema_example(REFERENCE_SCHEMA["url"])
-    print(schema_table.to_markdown(index=False))
+    output_dir = Path("data/enrichment")
+    output_dir.mkdir(parents=True, exist_ok=True)
+    output_path = output_dir / "metadata_schema_example.csv"
+    schema_table.to_csv(output_path, index=False)
