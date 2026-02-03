@@ -22,18 +22,29 @@ REFERENCE_SCHEMA = {
         "?srsltid=AfmBOoq7PEAwIFLNM2b39lsyMXk8MUdeu5r5ictqzubxODFPnYdHF_J8"
     ),
     "hedonism_id": "HED89307",
-    "name": "Karuizawa 29 Year Old Cask 7802 1984",
-    "type": "Japanese Single Malt Whisky",
-    "distillery": "Karuizawa (now closed)",
-    "age": "29 years (distilled in 1984, bottled 2014)",
-    "cask": "Oloroso Sherry Butt (#7802)",
-    "abv": "56.7%",
-    "bottles_produced": 577,
-    "region": "Nagano, Japan",
-    "price_gbp": "£7,850 (discounted from ~£8,500) for a 70 cl bottle",
-    "status": "Very limited stock (only a few bottles left when listed)",
-    "selection": "Part of Hedonism’s Limited Single Cask Collection",
+    "name": "Karuizawa 29 Year Old Cask 7802 1984 Whisky",
+    "type": "Single Malt Whisky",
+    "total_production": "1 of 577 bottles",
+    "region": "Nagano",
+    "country": "Japan",
+    "cask": "Oloroso Sherry",
+    "distillery": "Karuizawa",
+    "distributor": "No. 1 Drinks",
+    "distillery_closed": "Yes",
+    "description": (
+        "An outstanding example of single malt whisky from the iconic Karuizawa "
+        "Distillery, this special 1984 vintage has been aged for 29 years in a "
+        "single Oloroso Sherry cask (#7802). Selected by Richard Keller, Marius "
+        "Vestnes & Martin T. Smith, this expression was bottled in October 2014 "
+        "for the Norwegian market."
+    ),
 }
+
+TEST_URLS = [
+    "https://hedonism.co.uk/product/ardbeg-23-year-old-single-sherry-butt-2394-committee-release-1976-whisky",
+    "https://hedonism.co.uk/product/glendronach-43-year-old-px-butt-cask-706-batch-12-1972-whisky",
+    "https://hedonism.co.uk/product/karuizawa-29-year-old-cask-7802-1984-whisky",
+]
 
 
 def fetch_html(url: str, timeout: int = 30) -> str:
@@ -224,7 +235,10 @@ def build_schema_example(
 
 if __name__ == "__main__":
     schema_table = build_schema_example(REFERENCE_SCHEMA["url"])
+    test_table = extract_metadata_table(TEST_URLS)
     output_dir = Path("data/enrichment")
     output_dir.mkdir(parents=True, exist_ok=True)
     output_path = output_dir / "metadata_schema_example.csv"
     schema_table.to_csv(output_path, index=False)
+    test_output_path = output_dir / "metadata_test_urls.csv"
+    test_table.to_csv(test_output_path, index=False)
