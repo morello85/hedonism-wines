@@ -97,12 +97,12 @@ def units_sold(output_folder: Optional[Path] = None):
             WITH todays_items AS (             
                 SELECT code, title, url, price_gbp, availability, import_date 
                 FROM whisky_stocks_table
-                WHERE import_date = CURRENT_DATE()
+                WHERE CAST(import_date AS DATE) = CURRENT_DATE()
             ),
             yesterdays_items AS (
                 SELECT code, title, url, price_gbp, availability, import_date  
                 FROM whisky_stocks_table
-                WHERE import_date = CURRENT_DATE() -1
+                WHERE CAST(import_date AS DATE) = CURRENT_DATE() -1
             )
             SELECT CAST(CURRENT_DATE() AS DATE) AS import_date, a.code,
                    a.title, 

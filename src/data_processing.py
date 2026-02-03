@@ -110,7 +110,7 @@ def create_or_replace_tables(folder_path, db_path):
                             price_gbp,
                             url						  
                             FROM whisky_stocks_table 
-                            WHERE import_date = CURRENT_DATE()
+                            WHERE CAST(import_date AS DATE) = CURRENT_DATE()
                             """)
             logger.info("Main views recreated.")
         
