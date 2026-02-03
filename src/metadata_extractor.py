@@ -18,7 +18,23 @@ DEFAULT_HEADERS = {
 
 def fetch_html(url: str, timeout: int = 30) -> str:
     response = requests.get(url, headers=DEFAULT_HEADERS, timeout=timeout)
-    response.raise_for_status()
+    try:
+        response.raise_for_status()
+    except requests.HTTPError:
+        if response.status_code != 403:
+            raise
+        fallback_url = f"https://r.jina.ai/http://{url}"
+        fallback_headers = {
+            **DEFAULT_HEADERS,
+            "Referer": "https://hedonism.co.uk/",
+        }
+        fallback_response = requests.get(
+            fallback_url,
+            headers=fallback_headers,
+            timeout=timeout,
+        )
+        fallback_response.raise_for_status()
+        return fallback_response.text
     return response.text
 
 
@@ -61,6 +77,38 @@ def _get_type(doc: Dict[str, Any]) -> List[str]:
     if isinstance(doc_type, str):
         return [doc_type]
     return []
+
+
+def _extract_hed_code(value: Any) -> Optional[str]:
+    if isinstance(value, str):
+        match = re.search(r"\bHED\d{3,}\b", value, re.IGNORECASE)
+        if match:
+            return match.group(0).upper()
+        return None
+    if isinstance(value, list):
+        for item in value:
+            code = _extract_hed_code(item)
+            if code:
+                return code
+    if isinstance(value, dict):
+        for nested_value in value.values():
+            code = _extract_hed_code(nested_value)
+            if code:
+                return code
+    return None
+
+
+def _extract_hed_id(docs: Iterable[Dict[str, Any]], html: str) -> Optional[str]:
+    for doc in docs:
+        if "Product" in _get_type(doc):
+            for key in ("sku", "mpn", "productID", "productId", "id"):
+                code = _extract_hed_code(doc.get(key))
+                if code:
+                    return code
+            code = _extract_hed_code(doc.get("offers"))
+            if code:
+                return code
+    return _extract_hed_code(html)
 
 
 def _extract_breadcrumbs(docs: Iterable[Dict[str, Any]]) -> List[str]:
@@ -110,13 +158,17 @@ def extract_metadata(url: str) -> Dict[str, Any]:
     docs = list(_iter_json_ld_docs(blocks))
     breadcrumbs = _extract_breadcrumbs(docs)
     product_name = _extract_product_name(docs, html)
+    hed_id = _extract_hed_id(docs, html)
 
     categories = [crumb for crumb in breadcrumbs if crumb.lower() != "home"]
     if product_name and categories and categories[-1].lower() == product_name.lower():
         categories = categories[:-1]
+    if hed_id and hed_id not in categories:
+        categories.append(hed_id)
 
     return {
         "url": url,
+        "hed_id": hed_id,
         "product_name": product_name,
         "categories": categories,
         "category_path": " > ".join(categories),
