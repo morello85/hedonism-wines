@@ -198,7 +198,7 @@ def athena_tables_creation():
         price_gbp,
         url
     FROM whisky_stocks_view
-    WHERE import_date = CURRENT_DATE
+    WHERE CAST(import_date AS DATE) = CURRENT_DATE
     """
 
     # Execute SQL statements
