@@ -23,7 +23,8 @@ def fetch_html(url: str, timeout: int = 30) -> str:
     except requests.HTTPError:
         if response.status_code != 403:
             raise
-        fallback_url = f"https://r.jina.ai/http://{url}"
+        normalized_url = re.sub(r"^https?://", "", url)
+        fallback_url = f"https://r.jina.ai/http://{normalized_url}"
         fallback_headers = {
             **DEFAULT_HEADERS,
             "Referer": "https://hedonism.co.uk/",
