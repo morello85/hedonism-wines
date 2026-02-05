@@ -1,0 +1,16 @@
+.git
+.github
+.ipynb_checkpoints
+__pycache__
+*.pyc
+*.pyo
+*.pyd
+*.db
+*.sqlite
+*.sqlite3
+*.log
+venv
+notebooks
+data
+hedonism-wines.git
+.DS_Store
