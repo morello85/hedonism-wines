@@ -61,8 +61,9 @@ def run_streamlit():
         print("Skipping Streamlit launch because SKIP_STREAMLIT is set.")
         return
     time.sleep(5)  # Add a 5-second delay before running Streamlit
-    subprocess.run(["streamlit", "run", "data_viz.py"])
-    # To run the Athena-backed dashboard instead, uncomment the line below.
+    subprocess.run(["streamlit", "run", "data_athena_viz.py"])
+    # subprocess.run(["streamlit", "run", "data_viz.py"])
+    # Legacy Athena dashboard filename (kept for backward compatibility).
     # subprocess.run(["streamlit", "run", "data_viz_athena.py"])
 
 
