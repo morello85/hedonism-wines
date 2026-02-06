@@ -62,6 +62,8 @@ def run_streamlit():
         return
     time.sleep(5)  # Add a 5-second delay before running Streamlit
     subprocess.run(["streamlit", "run", "data_viz.py"])
+    # To run the Athena-backed dashboard instead, uncomment the line below.
+    # subprocess.run(["streamlit", "run", "data_viz_athena.py"])
 
 
 def write_last_refresh(timestamp_path: Path) -> None:
