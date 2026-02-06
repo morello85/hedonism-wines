@@ -171,7 +171,7 @@ def units_sold(output_folder: Optional[Path] = None) -> pd.DataFrame:
                    y.url,
                    y.price_gbp,
                    y.availability AS yesterday_availability,
-                   COALESCE(t.availability, 0) AS today_availability
+                   COALESCE(t.availability, '0') AS today_availability
             FROM yesterdays_items y
             LEFT JOIN todays_items t ON y.code = t.code
         ) a
