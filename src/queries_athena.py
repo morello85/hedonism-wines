@@ -164,18 +164,18 @@ def units_sold(output_folder: Optional[Path] = None) -> pd.DataFrame:
                a.url,
                a.price_gbp,
                a.today_availability AS availability,
-               CAST(a.yesterday_availability AS DOUBLE) - CAST(a.today_availability AS DOUBLE) AS units_sold
+               a.yesterday_availability - a.today_availability AS units_sold
         FROM (
             SELECT y.code,
                    y.title,
                    y.url,
                    y.price_gbp,
-                   y.availability AS yesterday_availability,
-                   COALESCE(t.availability, '0') AS today_availability
+                   COALESCE(TRY_CAST(y.availability AS DOUBLE), 0.0) AS yesterday_availability,
+                   COALESCE(TRY_CAST(t.availability AS DOUBLE), 0.0) AS today_availability
             FROM yesterdays_items y
             LEFT JOIN todays_items t ON y.code = t.code
         ) a
-        WHERE CAST(a.yesterday_availability AS DOUBLE) - CAST(a.today_availability AS DOUBLE) > 0
+        WHERE a.yesterday_availability - a.today_availability > 0
         ORDER BY price_gbp DESC
     """
     df = _run_query(query)
