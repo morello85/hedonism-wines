@@ -7,6 +7,31 @@ import streamlit as st
 import queries_athena as queries
 
 
+@st.cache_data(ttl=300, show_spinner=False)
+def load_discounted_items():
+    return queries.query_discounted_items()
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def load_stocks_and_median_values():
+    return queries.stocks_and_median_values()
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def load_stocks_and_median_values_by_code():
+    return queries.stocks_and_median_values_by_code()
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def load_units_sold():
+    return queries.units_sold()
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def load_price_search():
+    return queries.price_search()
+
+
 def last_refresh_message() -> str:
     """Get the last refresh message for the dashboard."""
     timestamp_path = Path(__file__).resolve().parent / "last_refresh.txt"
@@ -19,7 +44,7 @@ def last_refresh_message() -> str:
 
 def visualise_discounted_items():
     """Visualize discounted items."""
-    df = queries.query_discounted_items()
+    df = load_discounted_items()
 
     st.caption(last_refresh_message())
     st.title('Discounts')
@@ -32,18 +57,21 @@ def visualise_discounted_items():
         discount_perc_value = st.number_input('Enter discount percentage (%):', min_value=0.0, value=10.0, step=1.0)
         title_filter = st.text_input('Enter title:', value='Karuizawa')
 
-        # Create a slider for selecting the price range
-        discount_range = st.slider('Select discount range (GBP)', min_value=100, max_value=2000, 
-                                   value=(int(left_value), int(right_value)), step=100)
+        discount_range = st.slider(
+            'Select discount range (GBP)',
+            min_value=100,
+            max_value=2000,
+            value=(int(left_value), int(right_value)),
+            step=100,
+        )
 
-        # Filter the DataFrame based on the selected price range and title filter
         filtered_df = df[
-            (df['discount'] >= discount_range[0]) & 
-            (df['discount'] <= discount_range[1]) &
-            (df['perc_saving'] > discount_perc_value) &  # Adjusted filter condition
-            (df['title'].str.contains(title_filter, case=False))
+            (df['discount'] >= discount_range[0])
+            & (df['discount'] <= discount_range[1])
+            & (df['perc_saving'] > discount_perc_value)
+            & (df['title'].str.contains(title_filter, case=False, na=False))
         ]
-        
+
         filtered_df = filtered_df.sort_values(by='discount', ascending=False)
         st.data_editor(
             filtered_df,
@@ -53,7 +81,7 @@ def visualise_discounted_items():
                     help="Click to access the whisky page on hedonism wines",
                     validate="^https?://.*$",
                     max_chars=100,
-                    display_text="https://(.*?)\.streamlit\.app"
+                    display_text="https://(.*?)\\.streamlit\\.app",
                 )
             },
             hide_index=True,
@@ -62,7 +90,7 @@ def visualise_discounted_items():
         chart = alt.Chart(filtered_df).mark_bar().encode(
             x=alt.X('title', sort='-y'),
             y='current_price',
-            tooltip=['title', 'current_price']
+            tooltip=['title', 'current_price'],
         ).interactive()
 
         st.altair_chart(chart)
@@ -70,7 +98,7 @@ def visualise_discounted_items():
 
 def visualise_stocks_and_median_values():
     """Visualize stock count and median price."""
-    df = queries.stocks_and_median_values()
+    df = load_stocks_and_median_values()
 
     st.title('Stock and Median Price Check')
 
@@ -82,28 +110,25 @@ def visualise_stocks_and_median_values():
     custom_color_scale = alt.Scale(domain=['stock_count', 'median_price'], range=['blue', 'red'])
 
     my_chart = alt.Chart(df).mark_trail().transform_fold(
-        fold=['stock_count', 'median_price'], 
-        as_=['legend', 'value']
+        fold=['stock_count', 'median_price'],
+        as_=['legend', 'value'],
     ).encode(
         x='import_date',
         y=alt.Y('max(value):Q', axis=primary_axis),
-        color=alt.Color('legend:N', scale=custom_color_scale)
+        color=alt.Color('legend:N', scale=custom_color_scale),
     )
     st.altair_chart(my_chart, use_container_width=True)
 
 
 def visualise_stocks_and_median_values_by_code():
     """Visualize median price by code."""
-    df = queries.stocks_and_median_values_by_code()
+    df = load_stocks_and_median_values_by_code()
 
     st.title('Median Price Check By Code')
 
     if df.empty or 'code' not in df.columns:
         st.info("No code-level median price data available.")
         return
-
-    primary_axis = alt.Axis(title='Values', grid=False)
-    custom_color_scale = alt.Scale(domain=['stock_count', 'median_price'], range=['blue', 'red'])
 
     code_filter = st.text_area('Enter codes (comma-separated):', value='HED36140, HED85155')
     code_filter = code_filter.strip()
@@ -112,7 +137,7 @@ def visualise_stocks_and_median_values_by_code():
         st.info("Enter one or more codes to view code-level median prices.")
         return
 
-    codes_list = [code.strip() for code in code_filter.split(',')]
+    codes_list = [code.strip() for code in code_filter.split(',') if code.strip()]
     escaped_codes = [re.escape(code) for code in codes_list]
     regex_pattern = '|'.join(escaped_codes)
 
@@ -124,17 +149,17 @@ def visualise_stocks_and_median_values_by_code():
             x='import_date',
             y='median_price:Q',
             color='code:N',
-            tooltip=['code', 'import_date', 'median_price']
+            tooltip=['code', 'import_date', 'median_price'],
         )
 
         st.altair_chart(line_chart, use_container_width=True)
     else:
-        st.write(f"No data found for the entered codes.")
+        st.write("No data found for the entered codes.")
 
 
 def visualise_units_sold():
     """Visualize units sold."""
-    df = queries.units_sold()
+    df = load_units_sold()
 
     st.title('Previous Day Units Sold')
 
@@ -149,7 +174,7 @@ def visualise_units_sold():
                 help="Click to access the whisky page on hedonism wines",
                 validate="^https?://.*$",
                 max_chars=100,
-                display_text="https://(.*?)\.streamlit\.app"
+                display_text="https://(.*?)\\.streamlit\\.app",
             )
         },
         hide_index=True,
@@ -158,7 +183,7 @@ def visualise_units_sold():
     chart = alt.Chart(df).mark_bar().encode(
         x=alt.X('title', sort='-y'),
         y='price_gbp',
-        tooltip=['title', 'price_gbp']
+        tooltip=['title', 'price_gbp'],
     ).interactive()
 
     st.altair_chart(chart)
@@ -166,7 +191,7 @@ def visualise_units_sold():
 
 def visualise_price_search():
     """Visualize price search."""
-    df = queries.price_search()
+    df = load_price_search()
 
     st.title('Price Search')
 
@@ -178,15 +203,20 @@ def visualise_price_search():
     right_value = st.number_input('Enter right value:', min_value=0, value=20000, step=500, key=2)
     title_filter = st.text_input('Enter title:', value='Karuizawa', key=3)
 
-    price_range = st.slider('Select price range (GBP)', min_value=0, max_value=700000, 
-                            value=(int(left_value), int(right_value)), step=1000)
+    price_range = st.slider(
+        'Select price range (GBP)',
+        min_value=0,
+        max_value=700000,
+        value=(int(left_value), int(right_value)),
+        step=1000,
+    )
 
     filtered_df = df[
-        (df['price_gbp'] >= price_range[0]) & 
-        (df['price_gbp'] <= price_range[1]) &
-        (df['title'].str.contains(title_filter, case=False))
+        (df['price_gbp'] >= price_range[0])
+        & (df['price_gbp'] <= price_range[1])
+        & (df['title'].str.contains(title_filter, case=False, na=False))
     ]
-    
+
     filtered_df = filtered_df.sort_values(by='price_gbp', ascending=False)
 
     st.data_editor(
@@ -197,7 +227,7 @@ def visualise_price_search():
                 help="Click to access the whisky page on hedonism wines",
                 validate="^https?://.*$",
                 max_chars=100,
-                display_text="https://(.*?)\.streamlit\.app"
+                display_text="https://(.*?)\\.streamlit\\.app",
             )
         },
         hide_index=True,
@@ -206,18 +236,33 @@ def visualise_price_search():
     chart = alt.Chart(filtered_df).mark_bar().encode(
         x=alt.X('title', sort='-y'),
         y='price_gbp',
-        tooltip=['title', 'price_gbp']
+        tooltip=['title', 'price_gbp'],
     ).interactive()
 
     st.altair_chart(chart)
 
+
 def main():
-    """Run the visualizations."""
-    visualise_discounted_items()
-    visualise_stocks_and_median_values()
-    visualise_stocks_and_median_values_by_code()
-    visualise_units_sold()
-    visualise_price_search()
+    """Run one selected visualization to avoid querying all datasets per rerun."""
+    selected_view = st.sidebar.radio(
+        "Dashboard view",
+        (
+            'Discounts',
+            'Stock and Median Price Check',
+            'Median Price Check By Code',
+            'Previous Day Units Sold',
+            'Price Search',
+        ),
+    )
+
+    view_map = {
+        'Discounts': visualise_discounted_items,
+        'Stock and Median Price Check': visualise_stocks_and_median_values,
+        'Median Price Check By Code': visualise_stocks_and_median_values_by_code,
+        'Previous Day Units Sold': visualise_units_sold,
+        'Price Search': visualise_price_search,
+    }
+    view_map[selected_view]()
 
 
 if __name__ == "__main__":
