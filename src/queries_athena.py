@@ -116,26 +116,38 @@ def stocks_and_median_values() -> pd.DataFrame:
     return df
 
 
-def stocks_and_median_values_by_code() -> pd.DataFrame:
-    query = """
-        WITH x AS (
+def _escape_sql_string(value: str) -> str:
+    """Escape a string for inclusion in Athena SQL string literals."""
+    return value.replace("'", "''")
+
+
+def stocks_and_median_values_by_code(codes: list[str]) -> pd.DataFrame:
+    if not codes:
+        return pd.DataFrame(columns=["median_price", "total_availability", "import_date", "code", "price_changes_count"])
+
+    escaped_codes = [f"'{_escape_sql_string(code)}'" for code in codes]
+    codes_clause = ", ".join(escaped_codes)
+    query = f"""
+        WITH filtered AS (
             SELECT
                 approx_percentile(CAST(price_gbp AS DOUBLE), 0.5) AS median_price,
                 SUM(CAST(availability AS DOUBLE)) AS total_availability,
                 import_date,
                 code
             FROM whisky_stocks_view
+            WHERE code IN ({codes_clause})
             GROUP BY import_date, code
-            ORDER BY 3 DESC
         ),
-        y AS (
+        changes AS (
             SELECT COUNT(DISTINCT median_price) AS price_changes_count,
                    code
-            FROM x
+            FROM filtered
             GROUP BY code
         )
-        SELECT x.*, y.price_changes_count
-        FROM x INNER JOIN y ON x.code = y.code
+        SELECT f.*, c.price_changes_count
+        FROM filtered f
+        INNER JOIN changes c ON f.code = c.code
+        ORDER BY f.import_date DESC
     """
     df = _run_query(query)
     for col in ["median_price", "total_availability", "price_changes_count"]:
