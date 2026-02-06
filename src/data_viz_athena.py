@@ -1,6 +1,4 @@
 from pathlib import Path
-import re
-
 import altair as alt  # type: ignore
 import streamlit as st
 
@@ -18,8 +16,8 @@ def load_stocks_and_median_values():
 
 
 @st.cache_data(ttl=300, show_spinner=False)
-def load_stocks_and_median_values_by_code():
-    return queries.stocks_and_median_values_by_code()
+def load_stocks_and_median_values_by_code(codes: tuple[str, ...]):
+    return queries.stocks_and_median_values_by_code(list(codes))
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -122,13 +120,7 @@ def visualise_stocks_and_median_values():
 
 def visualise_stocks_and_median_values_by_code():
     """Visualize median price by code."""
-    df = load_stocks_and_median_values_by_code()
-
     st.title('Median Price Check By Code')
-
-    if df.empty or 'code' not in df.columns:
-        st.info("No code-level median price data available.")
-        return
 
     code_filter = st.text_area('Enter codes (comma-separated):', value='HED36140, HED85155')
     code_filter = code_filter.strip()
@@ -138,11 +130,14 @@ def visualise_stocks_and_median_values_by_code():
         return
 
     codes_list = [code.strip() for code in code_filter.split(',') if code.strip()]
-    escaped_codes = [re.escape(code) for code in codes_list]
-    regex_pattern = '|'.join(escaped_codes)
+    codes_tuple = tuple(dict.fromkeys(codes_list))
+    df = load_stocks_and_median_values_by_code(codes_tuple)
 
-    df['code'] = df['code'].astype(str)
-    filtered_df = df[df['code'].str.contains(regex_pattern, case=False, na=False)]
+    if df.empty or 'code' not in df.columns:
+        st.info("No code-level median price data available.")
+        return
+
+    filtered_df = df.copy()
 
     if not filtered_df.empty:
         line_chart = alt.Chart(filtered_df).mark_line().encode(
