@@ -74,6 +74,10 @@ def visualise_stocks_and_median_values():
 
     st.title('Stock and Median Price Check')
 
+    if df.empty:
+        st.info("No stock and median price data available.")
+        return
+
     primary_axis = alt.Axis(title='Values', grid=False)
     custom_color_scale = alt.Scale(domain=['stock_count', 'median_price'], range=['blue', 'red'])
 
@@ -94,11 +98,20 @@ def visualise_stocks_and_median_values_by_code():
 
     st.title('Median Price Check By Code')
 
+    if df.empty or 'code' not in df.columns:
+        st.info("No code-level median price data available.")
+        return
+
     primary_axis = alt.Axis(title='Values', grid=False)
     custom_color_scale = alt.Scale(domain=['stock_count', 'median_price'], range=['blue', 'red'])
 
     code_filter = st.text_area('Enter codes (comma-separated):', value='HED36140, HED85155')
     code_filter = code_filter.strip()
+
+    if not code_filter:
+        st.info("Enter one or more codes to view code-level median prices.")
+        return
+
     codes_list = [code.strip() for code in code_filter.split(',')]
     escaped_codes = [re.escape(code) for code in codes_list]
     regex_pattern = '|'.join(escaped_codes)
@@ -124,6 +137,10 @@ def visualise_units_sold():
     df = queries.units_sold()
 
     st.title('Previous Day Units Sold')
+
+    if df.empty:
+        st.info("No units sold data available for the previous day.")
+        return
     st.data_editor(
         df,
         column_config={
@@ -152,6 +169,10 @@ def visualise_price_search():
     df = queries.price_search()
 
     st.title('Price Search')
+
+    if df.empty:
+        st.info("No current stock pricing data available.")
+        return
 
     left_value = st.number_input('Enter left value:', min_value=0, value=1000, step=500, key=1)
     right_value = st.number_input('Enter right value:', min_value=0, value=20000, step=500, key=2)
@@ -189,7 +210,6 @@ def visualise_price_search():
     ).interactive()
 
     st.altair_chart(chart)
-
 
 def main():
     """Run the visualizations."""
