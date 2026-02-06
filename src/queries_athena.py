@@ -67,28 +67,25 @@ def _run_query(query: str, poll_interval: int = 2, timeout_seconds: int = 300) -
 
 def query_discounted_items() -> pd.DataFrame:
     query = """
-        WITH current_price AS (
-            SELECT code, price_gbp, import_date, title, url
-            FROM whisky_stocks_view_today
-        ),
-        historical_max_price AS (
-            SELECT code, MAX(price_gbp) AS max_price
+        SELECT
+            c.import_date AS current_date,
+            c.code,
+            c.title,
+            c.url,
+            CAST(c.price_gbp AS DOUBLE) AS current_price,
+            m.max_price AS old_price,
+            m.max_price - CAST(c.price_gbp AS DOUBLE) AS discount,
+            ROUND(
+                ((m.max_price - CAST(c.price_gbp AS DOUBLE)) / NULLIF(m.max_price, 0)) * 100,
+                4
+            ) AS perc_saving
+        FROM whisky_stocks_view_today c
+        JOIN (
+            SELECT code, MAX(CAST(price_gbp AS DOUBLE)) AS max_price
             FROM whisky_stocks_view
             GROUP BY code
-        ),
-        output AS (
-            SELECT  c.import_date AS current_date,
-                    c.code,
-                    c.title,
-                    c.url,
-                    c.price_gbp AS current_price,
-                    m.max_price AS old_price,
-                    m.max_price - c.price_gbp AS discount,
-                    ROUND(((m.max_price - c.price_gbp) / m.max_price), 4) * 100 AS perc_saving
-            FROM current_price c
-            JOIN historical_max_price m ON c.code = m.code
-        )
-        SELECT * FROM output WHERE discount > 0
+        ) m ON c.code = m.code
+        WHERE m.max_price - CAST(c.price_gbp AS DOUBLE) > 0
         ORDER BY discount DESC
     """
     df = _run_query(query)
