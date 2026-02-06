@@ -68,7 +68,7 @@ def _run_query(query: str, poll_interval: int = 2, timeout_seconds: int = 300) -
 def query_discounted_items() -> pd.DataFrame:
     query = """
             SELECT
-                c.import_date AS current_date,
+                c.import_date AS current_import_date,
                 c.code,
                 c.title,
                 c.url,
