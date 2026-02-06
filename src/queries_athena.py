@@ -100,7 +100,7 @@ def query_discounted_items() -> pd.DataFrame:
 def stocks_and_median_values() -> pd.DataFrame:
     query = """
         SELECT COUNT(*) AS stock_count,
-               MEDIAN(CAST(price_gbp AS DOUBLE)) AS median_price,
+               approx_percentile(CAST(price_gbp AS DOUBLE), 0.5) AS median_price,
                SUM(CAST(availability AS DOUBLE)) AS total_availability,
                import_date
         FROM whisky_stocks_view
@@ -120,7 +120,7 @@ def stocks_and_median_values_by_code() -> pd.DataFrame:
     query = """
         WITH x AS (
             SELECT
-                MEDIAN(CAST(price_gbp AS DOUBLE)) AS median_price,
+                approx_percentile(CAST(price_gbp AS DOUBLE), 0.5) AS median_price,
                 SUM(CAST(availability AS DOUBLE)) AS total_availability,
                 import_date,
                 code
