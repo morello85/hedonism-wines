@@ -17,6 +17,7 @@ ATHENA_OUTPUT_LOCATION = os.getenv(
 )
 
 athena_client = boto3.client("athena", region_name=ATHENA_REGION)
+s3_client = boto3.client("s3", region_name=ATHENA_REGION)
 
 
 def _run_query(query: str, poll_interval: int = 2, timeout_seconds: int = 300) -> pd.DataFrame:
@@ -63,6 +64,201 @@ def _run_query(query: str, poll_interval: int = 2, timeout_seconds: int = 300) -
     headers = [col["Name"] for col in column_info]
     body = rows[1:] if rows and rows[0] == headers else rows
     return pd.DataFrame(body, columns=headers)
+
+
+def _execute_statement(statement: str, poll_interval: int = 2, timeout_seconds: int = 300) -> None:
+    response = athena_client.start_query_execution(
+        QueryString=statement,
+        QueryExecutionContext={"Database": ATHENA_DATABASE},
+        ResultConfiguration={"OutputLocation": ATHENA_OUTPUT_LOCATION},
+    )
+    query_execution_id = response["QueryExecutionId"]
+
+    start_time = time.time()
+    terminal_states = {"SUCCEEDED", "FAILED", "CANCELLED"}
+
+    while True:
+        execution = athena_client.get_query_execution(QueryExecutionId=query_execution_id)
+        status = execution["QueryExecution"]["Status"]["State"]
+
+        if status in terminal_states:
+            if status != "SUCCEEDED":
+                reason = execution["QueryExecution"]["Status"].get("StateChangeReason", "Unknown")
+                raise RuntimeError(f"Athena statement {query_execution_id} {status}: {reason}")
+            return
+
+        if time.time() - start_time > timeout_seconds:
+            raise TimeoutError(f"Athena statement {query_execution_id} timed out")
+
+        time.sleep(poll_interval)
+
+
+def _clear_s3_prefix(s3_uri: str) -> None:
+    if not s3_uri.startswith("s3://"):
+        raise ValueError(f"Expected s3:// URI, got {s3_uri}")
+
+    bucket, _, prefix = s3_uri[5:].partition("/")
+    list_prefix = prefix.rstrip("/")
+    list_prefix = f"{list_prefix}/" if list_prefix else ""
+
+    paginator = s3_client.get_paginator("list_objects_v2")
+    for page in paginator.paginate(Bucket=bucket, Prefix=list_prefix):
+        objects = [{"Key": obj["Key"]} for obj in page.get("Contents", [])]
+        if objects:
+            s3_client.delete_objects(Bucket=bucket, Delete={"Objects": objects})
+
+
+def athena_tables_creation() -> None:
+    parquet_location = os.getenv("ATHENA_PARQUET_S3", "s3://hedonism-wines-api-parquet/")
+    raw_csv_location = os.getenv("ATHENA_RAW_CSV_S3", "s3://hedonism-wines-api-files/")
+
+    statements = [
+        "DROP VIEW IF EXISTS whisky_stocks_view_today",
+        "DROP VIEW IF EXISTS whisky_stocks_view",
+        "DROP VIEW IF EXISTS stocks_view",
+        "DROP TABLE IF EXISTS stocks_table",
+        "DROP TABLE IF EXISTS stocks_table_raw",
+        f"""
+        CREATE EXTERNAL TABLE IF NOT EXISTS stocks_table_raw (
+            code STRING,
+            title STRING,
+            vintage STRING,
+            size STRING,
+            abv STRING,
+            style STRING,
+            country STRING,
+            group_name STRING,
+            available STRING,
+            price_incl_vat STRING,
+            price_ex_vat STRING,
+            link STRING
+        )
+        ROW FORMAT SERDE 'org.apache.hadoop.hive.serde2.OpenCSVSerde'
+        WITH SERDEPROPERTIES (
+            'separatorChar' = ',',
+            'quoteChar' = '"',
+            'escapeChar' = '\\\\'
+        )
+        STORED AS TEXTFILE
+        LOCATION '{raw_csv_location}'
+        TBLPROPERTIES ('skip.header.line.count' = '1')
+        """,
+        "DROP TABLE IF EXISTS stocks_table_parquet",
+    ]
+
+    create_parquet_table = f"""
+        CREATE TABLE IF NOT EXISTS stocks_table_parquet
+        WITH (
+            format = 'PARQUET',
+            external_location = '{parquet_location}'
+        ) AS
+        WITH raw AS (
+            SELECT
+                code,
+                title,
+                vintage,
+                size,
+                abv,
+                style,
+                country,
+                group_name AS group_value,
+                available,
+                price_incl_vat,
+                price_ex_vat,
+                link,
+                "$path" AS source_path,
+                CASE
+                    WHEN available IS NULL
+                        AND price_incl_vat IS NULL
+                        AND price_ex_vat IS NULL
+                        AND link IS NULL
+                        AND TRY_CAST(group_name AS DOUBLE) IS NOT NULL
+                    THEN true
+                    ELSE false
+                END AS is_legacy_schema
+            FROM {ATHENA_DATABASE}.stocks_table_raw
+        )
+        SELECT
+            TRY_CAST(CASE WHEN is_legacy_schema THEN NULL ELSE abv END AS DOUBLE) AS abv,
+            CASE WHEN is_legacy_schema THEN country ELSE available END AS availability,
+            code,
+            CASE WHEN is_legacy_schema THEN abv ELSE country END AS country,
+            CASE WHEN is_legacy_schema THEN style ELSE group_value END AS type,
+            CASE WHEN is_legacy_schema THEN NULL ELSE link END AS url,
+            TRY_CAST(CASE WHEN is_legacy_schema THEN group_value ELSE NULL END AS DOUBLE) AS price_gbp,
+            TRY_CAST(CASE WHEN is_legacy_schema THEN NULL ELSE price_ex_vat END AS DOUBLE) AS price_ex_vat,
+            TRY_CAST(CASE WHEN is_legacy_schema THEN NULL ELSE price_incl_vat END AS DOUBLE) AS price_incl_vat,
+            CASE WHEN is_legacy_schema THEN vintage ELSE size END AS size,
+            CASE WHEN is_legacy_schema THEN size ELSE style END AS style,
+            title,
+            CASE WHEN is_legacy_schema THEN NULL ELSE vintage END AS vintage,
+            DATE_PARSE(regexp_extract(source_path, '(\\d{{4}}_\\d{{2}}_\\d{{2}})', 1), '%Y_%m_%d') AS import_date
+        FROM raw
+    """
+
+    trailing_statements = [
+        """
+        CREATE VIEW stocks_view AS
+        SELECT
+            abv,
+            availability,
+            code,
+            country,
+            type,
+            url,
+            price_gbp,
+            price_ex_vat,
+            price_incl_vat,
+            size,
+            style,
+            title,
+            vintage,
+            import_date
+        FROM stocks_table_parquet
+        """,
+        """
+        CREATE VIEW whisky_stocks_view AS
+        SELECT
+            abv,
+            availability,
+            code,
+            country,
+            type,
+            url,
+            COALESCE(price_gbp, price_incl_vat) AS price_gbp,
+            COALESCE(price_ex_vat, 0) AS price_ex_vat,
+            COALESCE(price_incl_vat, 0) AS price_incl_vat,
+            size,
+            style,
+            title,
+            vintage,
+            import_date
+        FROM stocks_table_parquet
+        WHERE type = 'Whisky'
+        """,
+        """
+        CREATE VIEW whisky_stocks_view_today AS
+        SELECT
+            import_date,
+            code,
+            title,
+            price_gbp,
+            url
+        FROM whisky_stocks_view
+        WHERE CAST(import_date AS DATE) = CURRENT_DATE
+        """,
+    ]
+
+    for statement in statements:
+        _execute_statement(statement)
+
+    _clear_s3_prefix(parquet_location)
+    _execute_statement(create_parquet_table)
+
+    for statement in trailing_statements:
+        _execute_statement(statement)
+
+    print("Athena tables and views created successfully.")
 
 
 def query_discounted_items() -> pd.DataFrame:

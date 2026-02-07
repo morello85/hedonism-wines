@@ -5,7 +5,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 import api
-import athena_queries as aq
+import queries_athena as aq
 import data_processing as dp
 import email_alerting as ea
 import queries as q
