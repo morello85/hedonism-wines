@@ -113,6 +113,7 @@ def athena_tables_creation() -> None:
     raw_csv_location = os.getenv("ATHENA_RAW_CSV_S3", "s3://hedonism-wines-api-files/")
 
     statements = [
+        "DROP VIEW IF EXISTS whisky_units_sold_all_time",
         "DROP VIEW IF EXISTS whisky_stocks_view_today",
         "DROP VIEW IF EXISTS whisky_stocks_view",
         "DROP VIEW IF EXISTS stocks_view",
@@ -246,6 +247,77 @@ def athena_tables_creation() -> None:
             url
         FROM whisky_stocks_view
         WHERE CAST(import_date AS DATE) = CURRENT_DATE
+        """,
+        """
+        CREATE VIEW whisky_units_sold_all_time AS
+        WITH price_changes AS (
+            SELECT
+                code,
+                COUNT(DISTINCT median_price) AS price_changes_count
+            FROM (
+                SELECT
+                    code,
+                    CAST(import_date AS DATE) AS import_date,
+                    approx_percentile(CAST(price_gbp AS DOUBLE), 0.5) AS median_price
+                FROM whisky_stocks_view
+                GROUP BY code, CAST(import_date AS DATE)
+            ) grouped_prices
+            GROUP BY code
+        ),
+        dates AS (
+            SELECT DISTINCT CAST(import_date AS DATE) AS target_date
+            FROM whisky_stocks_view
+        ),
+        current_items AS (
+            SELECT
+                d.target_date,
+                w.code,
+                w.title,
+                w.url,
+                w.price_gbp,
+                w.availability
+            FROM whisky_stocks_view w
+            INNER JOIN dates d
+                ON CAST(w.import_date AS DATE) = d.target_date
+        ),
+        previous_items AS (
+            SELECT
+                d.target_date,
+                w.code,
+                w.title,
+                w.url,
+                w.price_gbp,
+                w.availability
+            FROM whisky_stocks_view w
+            INNER JOIN dates d
+                ON CAST(w.import_date AS DATE) = date_add('day', -1, d.target_date)
+        )
+        SELECT
+            a.target_date AS import_date,
+            a.code,
+            a.title,
+            a.url,
+            a.price_gbp,
+            a.current_availability AS availability,
+            a.previous_availability - a.current_availability AS units_sold,
+            pc.price_changes_count
+        FROM (
+            SELECT
+                y.target_date,
+                y.code,
+                y.title,
+                y.url,
+                y.price_gbp,
+                COALESCE(TRY_CAST(y.availability AS DOUBLE), 0.0) AS previous_availability,
+                COALESCE(TRY_CAST(t.availability AS DOUBLE), 0.0) AS current_availability
+            FROM previous_items y
+            LEFT JOIN current_items t
+                ON y.code = t.code
+                AND y.target_date = t.target_date
+        ) a
+        LEFT JOIN price_changes pc ON a.code = pc.code
+        WHERE a.previous_availability - a.current_availability > 0
+        ORDER BY import_date DESC, price_gbp DESC
         """,
     ]
 
