@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 import time
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
 
@@ -158,36 +158,58 @@ def stocks_and_median_values_by_code(codes: list[str]) -> pd.DataFrame:
     return df
 
 
-def units_sold(output_folder: Optional[Path] = None) -> pd.DataFrame:
-    query = """
-        WITH todays_items AS (
-            SELECT code, title, url, price_gbp, availability, import_date
-            FROM whisky_stocks_view
-            WHERE CAST(import_date AS DATE) = CURRENT_DATE
+def _normalise_target_date(target_date: Optional[date | datetime | str]) -> str:
+    if target_date is None:
+        return datetime.now().date().isoformat()
+    if isinstance(target_date, datetime):
+        return target_date.date().isoformat()
+    if isinstance(target_date, date):
+        return target_date.isoformat()
+
+    parsed = datetime.fromisoformat(target_date)
+    return parsed.date().isoformat()
+
+
+def units_sold_by_date(
+    target_date: date | datetime | str,
+    output_folder: Optional[Path] = None,
+) -> pd.DataFrame:
+    target_date_value = _normalise_target_date(target_date)
+    query = f"""
+        WITH params AS (
+            SELECT DATE '{target_date_value}' AS target_date
         ),
-        yesterdays_items AS (
-            SELECT code, title, url, price_gbp, availability, import_date
+        current_items AS (
+            SELECT code, title, url, price_gbp, availability
             FROM whisky_stocks_view
-            WHERE CAST(import_date AS DATE) = DATE_ADD('day', -1, CURRENT_DATE)
+            CROSS JOIN params
+            WHERE CAST(import_date AS DATE) = target_date
+        ),
+        previous_items AS (
+            SELECT code, title, url, price_gbp, availability
+            FROM whisky_stocks_view
+            CROSS JOIN params
+            WHERE CAST(import_date AS DATE) = DATE_ADD('day', -1, target_date)
         )
-        SELECT CAST(CURRENT_DATE AS DATE) AS import_date,
+        SELECT p.target_date AS import_date,
                a.code,
                a.title,
                a.url,
                a.price_gbp,
-               a.today_availability AS availability,
-               a.yesterday_availability - a.today_availability AS units_sold
+               a.current_availability AS availability,
+               a.previous_availability - a.current_availability AS units_sold
         FROM (
             SELECT y.code,
                    y.title,
                    y.url,
                    y.price_gbp,
-                   COALESCE(TRY_CAST(y.availability AS DOUBLE), 0.0) AS yesterday_availability,
-                   COALESCE(TRY_CAST(t.availability AS DOUBLE), 0.0) AS today_availability
-            FROM yesterdays_items y
-            LEFT JOIN todays_items t ON y.code = t.code
+                   COALESCE(TRY_CAST(y.availability AS DOUBLE), 0.0) AS previous_availability,
+                   COALESCE(TRY_CAST(t.availability AS DOUBLE), 0.0) AS current_availability
+            FROM previous_items y
+            LEFT JOIN current_items t ON y.code = t.code
         ) a
-        WHERE a.yesterday_availability - a.today_availability > 0
+        CROSS JOIN params p
+        WHERE a.previous_availability - a.current_availability > 0
         ORDER BY price_gbp DESC
     """
     df = _run_query(query)
@@ -199,10 +221,14 @@ def units_sold(output_folder: Optional[Path] = None) -> pd.DataFrame:
 
     if output_folder:
         output_folder.mkdir(parents=True, exist_ok=True)
-        filename = f"sales{datetime.now().strftime('_%Y_%m_%d')}.csv"
+        filename = f"sales_{target_date_value}.csv"
         df.to_csv(output_folder / filename, index=False)
 
     return df
+
+
+def previous_day_units_sold(output_folder: Optional[Path] = None) -> pd.DataFrame:
+    return units_sold_by_date(datetime.now().date(), output_folder=output_folder)
 
 
 def price_search() -> pd.DataFrame:
