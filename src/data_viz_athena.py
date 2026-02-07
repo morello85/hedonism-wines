@@ -21,8 +21,13 @@ def load_stocks_and_median_values_by_code(codes: tuple[str, ...]):
 
 
 @st.cache_data(ttl=300, show_spinner=False)
-def load_units_sold():
-    return queries.units_sold()
+def load_previous_day_units_sold():
+    return queries.previous_day_units_sold()
+
+
+@st.cache_data(ttl=300, show_spinner=False)
+def load_units_sold_by_date(target_date_iso: str):
+    return queries.units_sold_by_date(target_date_iso)
 
 
 @st.cache_data(ttl=300, show_spinner=False)
@@ -152,15 +157,48 @@ def visualise_stocks_and_median_values_by_code():
         st.write("No data found for the entered codes.")
 
 
-def visualise_units_sold():
-    """Visualize units sold."""
-    df = load_units_sold()
+def visualise_previous_day_units_sold():
+    """Visualize previous day units sold."""
+    df = load_previous_day_units_sold()
 
     st.title('Previous Day Units Sold')
 
     if df.empty:
         st.info("No units sold data available for the previous day.")
         return
+    st.data_editor(
+        df,
+        column_config={
+            "url": st.column_config.LinkColumn(
+                "link",
+                help="Click to access the whisky page on hedonism wines",
+                validate="^https?://.*$",
+                max_chars=100,
+                display_text="https://(.*?)\\.streamlit\\.app",
+            )
+        },
+        hide_index=True,
+    )
+
+    chart = alt.Chart(df).mark_bar().encode(
+        x=alt.X('title', sort='-y'),
+        y='price_gbp',
+        tooltip=['title', 'price_gbp'],
+    ).interactive()
+
+    st.altair_chart(chart)
+
+
+def visualise_units_sold_by_date():
+    """Visualize units sold for a selected date."""
+    st.title('Units Sold by Selected Date')
+    target_date = st.date_input('Select date to analyse units sold')
+
+    df = load_units_sold_by_date(target_date.isoformat())
+    if df.empty:
+        st.info(f'No units sold data available for {target_date.isoformat()}.')
+        return
+
     st.data_editor(
         df,
         column_config={
@@ -246,6 +284,7 @@ def main():
             'Stock and Median Price Check',
             'Median Price Check By Code',
             'Previous Day Units Sold',
+            'Units Sold by Selected Date',
             'Price Search',
         ),
     )
@@ -254,7 +293,8 @@ def main():
         'Discounts': visualise_discounted_items,
         'Stock and Median Price Check': visualise_stocks_and_median_values,
         'Median Price Check By Code': visualise_stocks_and_median_values_by_code,
-        'Previous Day Units Sold': visualise_units_sold,
+        'Previous Day Units Sold': visualise_previous_day_units_sold,
+        'Units Sold by Selected Date': visualise_units_sold_by_date,
         'Price Search': visualise_price_search,
     }
     view_map[selected_view]()
