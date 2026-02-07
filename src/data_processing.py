@@ -112,6 +112,80 @@ def create_or_replace_tables(folder_path, db_path):
                             FROM whisky_stocks_table 
                             WHERE CAST(import_date AS DATE) = CURRENT_DATE()
                             """)
+
+            conn.execute("DROP VIEW IF EXISTS whisky_units_sold_all_time")
+            logger.info("whisky_units_sold_all_time view dropped successfully.")
+            # Create a view with all daily units sold across the full date history
+            conn.execute("""CREATE OR REPLACE VIEW whisky_units_sold_all_time AS
+                            WITH price_changes AS (
+                                SELECT
+                                    code,
+                                    COUNT(DISTINCT median_price) AS price_changes_count
+                                FROM (
+                                    SELECT
+                                        code,
+                                        import_date,
+                                        MEDIAN(CAST(price_gbp AS DOUBLE)) AS median_price
+                                    FROM whisky_stocks_table
+                                    GROUP BY code, import_date
+                                ) grouped_prices
+                                GROUP BY code
+                            ),
+                            dates AS (
+                                SELECT DISTINCT CAST(import_date AS DATE) AS target_date
+                                FROM whisky_stocks_table
+                            ),
+                            current_items AS (
+                                SELECT
+                                    d.target_date,
+                                    w.code,
+                                    w.title,
+                                    w.url,
+                                    w.price_gbp,
+                                    w.availability
+                                FROM whisky_stocks_table w
+                                INNER JOIN dates d
+                                    ON CAST(w.import_date AS DATE) = d.target_date
+                            ),
+                            previous_items AS (
+                                SELECT
+                                    d.target_date,
+                                    w.code,
+                                    w.title,
+                                    w.url,
+                                    w.price_gbp,
+                                    w.availability
+                                FROM whisky_stocks_table w
+                                INNER JOIN dates d
+                                    ON CAST(w.import_date AS DATE) = d.target_date - INTERVAL 1 DAY
+                            )
+                            SELECT
+                                a.target_date AS import_date,
+                                a.code,
+                                a.title,
+                                a.url,
+                                a.price_gbp,
+                                a.current_availability AS availability,
+                                a.previous_availability - a.current_availability AS units_sold,
+                                pc.price_changes_count
+                            FROM (
+                                SELECT
+                                    y.target_date,
+                                    y.code,
+                                    y.title,
+                                    y.url,
+                                    y.price_gbp,
+                                    COALESCE(TRY_CAST(y.availability AS DOUBLE), 0.0) AS previous_availability,
+                                    COALESCE(TRY_CAST(t.availability AS DOUBLE), 0.0) AS current_availability
+                                FROM previous_items y
+                                LEFT JOIN current_items t
+                                    ON y.code = t.code
+                                    AND y.target_date = t.target_date
+                            ) a
+                            LEFT JOIN price_changes pc ON a.code = pc.code
+                            WHERE a.previous_availability - a.current_availability > 0
+                            ORDER BY import_date DESC, price_gbp DESC
+                            """)
             logger.info("Main views recreated.")
         
         logger.info("Tables created or replaced successfully.")
