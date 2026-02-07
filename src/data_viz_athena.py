@@ -79,6 +79,10 @@ def visualise_discounted_items():
         st.data_editor(
             filtered_df,
             column_config={
+                "price_changes_count": st.column_config.NumberColumn(
+                    "price_changes_count",
+                    help="Number of distinct historical median prices observed for this code",
+                ),
                 "url": st.column_config.LinkColumn(
                     "link",
                     help="Click to access the whisky page on hedonism wines",
@@ -169,6 +173,10 @@ def visualise_previous_day_units_sold():
     st.data_editor(
         df,
         column_config={
+            "price_changes_count": st.column_config.NumberColumn(
+                "price_changes_count",
+                help="Number of distinct historical median prices observed for this code",
+            ),
             "url": st.column_config.LinkColumn(
                 "link",
                 help="Click to access the whisky page on hedonism wines",
@@ -202,6 +210,10 @@ def visualise_units_sold_by_date():
     st.data_editor(
         df,
         column_config={
+            "price_changes_count": st.column_config.NumberColumn(
+                "price_changes_count",
+                help="Number of distinct historical median prices observed for this code",
+            ),
             "url": st.column_config.LinkColumn(
                 "link",
                 help="Click to access the whisky page on hedonism wines",
@@ -255,6 +267,10 @@ def visualise_price_search():
     st.data_editor(
         filtered_df,
         column_config={
+            "price_changes_count": st.column_config.NumberColumn(
+                "price_changes_count",
+                help="Number of distinct historical median prices observed for this code",
+            ),
             "url": st.column_config.LinkColumn(
                 "link",
                 help="Click to access the whisky page on hedonism wines",

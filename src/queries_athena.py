@@ -67,6 +67,20 @@ def _run_query(query: str, poll_interval: int = 2, timeout_seconds: int = 300) -
 
 def query_discounted_items() -> pd.DataFrame:
     query = """
+            WITH price_changes AS (
+                SELECT
+                    code,
+                    COUNT(DISTINCT median_price) AS price_changes_count
+                FROM (
+                    SELECT
+                        code,
+                        import_date,
+                        approx_percentile(CAST(price_gbp AS DOUBLE), 0.5) AS median_price
+                    FROM whisky_stocks_view
+                    GROUP BY code, import_date
+                ) grouped_prices
+                GROUP BY code
+            )
             SELECT
                 c.import_date AS current_import_date,
                 c.code,
@@ -78,19 +92,21 @@ def query_discounted_items() -> pd.DataFrame:
                 ROUND(
                     ((m.max_price - CAST(c.price_gbp AS DOUBLE)) / NULLIF(m.max_price, 0)) * 100,
                     4
-                ) AS perc_saving
+                ) AS perc_saving,
+                p.price_changes_count
             FROM whisky_stocks_view_today c
             JOIN (
                 SELECT code, MAX(CAST(price_gbp AS DOUBLE)) AS max_price
                 FROM whisky_stocks_view
                 GROUP BY code
             ) m ON c.code = m.code
+            LEFT JOIN price_changes p ON c.code = p.code
             WHERE m.max_price - CAST(c.price_gbp AS DOUBLE) > 0
             ORDER BY discount DESC;
 
     """
     df = _run_query(query)
-    numeric_cols = ["current_price", "old_price", "discount", "perc_saving"]
+    numeric_cols = ["current_price", "old_price", "discount", "perc_saving", "price_changes_count"]
     for col in numeric_cols:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
@@ -176,7 +192,21 @@ def units_sold_by_date(
 ) -> pd.DataFrame:
     target_date_value = _normalise_target_date(target_date)
     query = f"""
-        WITH params AS (
+        WITH price_changes AS (
+            SELECT
+                code,
+                COUNT(DISTINCT median_price) AS price_changes_count
+            FROM (
+                SELECT
+                    code,
+                    import_date,
+                    approx_percentile(CAST(price_gbp AS DOUBLE), 0.5) AS median_price
+                FROM whisky_stocks_view
+                GROUP BY code, import_date
+            ) grouped_prices
+            GROUP BY code
+        ),
+        params AS (
             SELECT DATE '{target_date_value}' AS target_date
         ),
         current_items AS (
@@ -191,13 +221,14 @@ def units_sold_by_date(
             CROSS JOIN params
             WHERE CAST(import_date AS DATE) = DATE_ADD('day', -1, target_date)
         )
-        SELECT p.target_date AS import_date,
+        SELECT prm.target_date AS import_date,
                a.code,
                a.title,
                a.url,
                a.price_gbp,
                a.current_availability AS availability,
-               a.previous_availability - a.current_availability AS units_sold
+               a.previous_availability - a.current_availability AS units_sold,
+               pc.price_changes_count
         FROM (
             SELECT y.code,
                    y.title,
@@ -208,12 +239,13 @@ def units_sold_by_date(
             FROM previous_items y
             LEFT JOIN current_items t ON y.code = t.code
         ) a
-        CROSS JOIN params p
+        LEFT JOIN price_changes pc ON a.code = pc.code
+        CROSS JOIN params prm
         WHERE a.previous_availability - a.current_availability > 0
         ORDER BY price_gbp DESC
     """
     df = _run_query(query)
-    for col in ["price_gbp", "availability", "units_sold"]:
+    for col in ["price_gbp", "availability", "units_sold", "price_changes_count"]:
         if col in df.columns:
             df[col] = pd.to_numeric(df[col], errors="coerce")
     if "import_date" in df.columns:
@@ -233,14 +265,31 @@ def previous_day_units_sold(output_folder: Optional[Path] = None) -> pd.DataFram
 
 def price_search() -> pd.DataFrame:
     query = """
-        SELECT import_date,
-               code,
-               title,
-               price_gbp,
-               url
-        FROM whisky_stocks_view_today
+        WITH price_changes AS (
+            SELECT
+                code,
+                COUNT(DISTINCT median_price) AS price_changes_count
+            FROM (
+                SELECT
+                    code,
+                    import_date,
+                    approx_percentile(CAST(price_gbp AS DOUBLE), 0.5) AS median_price
+                FROM whisky_stocks_view
+                GROUP BY code, import_date
+            ) grouped_prices
+            GROUP BY code
+        )
+        SELECT c.import_date,
+               c.code,
+               c.title,
+               c.price_gbp,
+               c.url,
+               p.price_changes_count
+        FROM whisky_stocks_view_today c
+        LEFT JOIN price_changes p ON c.code = p.code
     """
     df = _run_query(query)
-    if "price_gbp" in df.columns:
-        df["price_gbp"] = pd.to_numeric(df["price_gbp"], errors="coerce")
+    for col in ["price_gbp", "price_changes_count"]:
+        if col in df.columns:
+            df[col] = pd.to_numeric(df[col], errors="coerce")
     return df
